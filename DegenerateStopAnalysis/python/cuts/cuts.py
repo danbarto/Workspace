@@ -53,10 +53,6 @@ muSel       = CutClass("muSel", [
                 )
 
 
- 
-
-
-
 
 presel = CutClass ("presel", [
                               ["MET200","met>200"],
@@ -66,12 +62,12 @@ presel = CutClass ("presel", [
                               #
                               ["nMuon>=1",    "nlep>=1 "  ], ## Add 2ndMu Veto Here
                               ["2ndMu20Veto", "(nlep==1 || nlep ==2 && LepGood_pt[looseMuonIndex2] < 20)"],
-                              #
                               #["nMuon==1",    "nlep==1 "  ], ## Very Small Difference
                               ["No3rdJet60","nJet60<=2"]
                              ],
                 baseCut=None,
-                ) 
+                )
+ 
 preselection = presel.combined
 
 
@@ -155,7 +151,6 @@ sr2      = CutClass ("SR2",   [
                               ],
                   baseCut = presel,
                   )
-
 
 
 sr2_ptbin   = CutClass ("SR2_PtBinned",    [

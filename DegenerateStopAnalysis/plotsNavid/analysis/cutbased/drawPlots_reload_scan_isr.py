@@ -201,7 +201,7 @@ cutOpt = cutInsts[cutInstStr]['opt']
 #calcTrkCutLimit = False
 calcTrkCutLimit = process
 
-redo = True
+redo = False
 if calcTrkCutLimit:
 
     limits={}
@@ -245,7 +245,25 @@ if calcTrkCutLimit:
             pickle.dump(limits, open( limitPkl,'w'))
         canv , exclplot= limitTools.drawExpectedLimit( limits, plotDir=saveDir+"/ExpectedLimit_%s.png"%( lumiTag ) , bins=None, key=None )
         canv.SetName("ExpectedLimit_%s_%s_%s.pkl"%(htString,runTag,lumiTag ) )
+        tfile.cd()
         canv.Write()
         #tfile.Write()
 
 tfile.Close()
+
+
+
+getYieldTables = True
+if getYieldTables:
+    samplesForTable = ['tt','z','qcd','w','s300_290','s300_270','s300_250','s300_240']
+
+    ylds_presel = Yields(samples, samplesForTable, presel, cutOpt='flow', nSpaces=5, pklOpt=True, verbose=True) 
+    JinjaTexTable(ylds_presel, pdfDir=tableDir, outputName="" , transpose=True)
+    ylds_sr2 = Yields(samples, samplesForTable, sr2, cutOpt='flow2', nSpaces=5, pklOpt=True, verbose=True)
+    JinjaTexTable(ylds_sr2, pdfDir=tableDir, outputName="" , transpose=True)
+    ylds_sr1 = Yields(samples, samplesForTable, sr1, cutOpt='flow2', nSpaces=5, pklOpt=True, verbose=True)
+    JinjaTexTable(ylds_sr1, pdfDir=tableDir, outputName="" , transpose=True)
+    ylds_runIFlow = Yields(samples, samplesForTable, runIflow, cutOpt='inclList', nSpaces=5, pklOpt=True, verbose=True) 
+    JinjaTexTable(ylds_runIFlow, pdfDir=tableDir, outputName="" , transpose=False)
+
+

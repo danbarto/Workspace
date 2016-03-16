@@ -1153,6 +1153,8 @@ class CutClass():
         else:
             self.list         =[[self.baseCutName, self.baseCutString]]+  [ [cutName,"(%s)"%"&&".join([self.baseCutString,cut])  ] for cutName,cut in self.inclList ]
         self.list2        = self.list[1:]
+        if baseCut:
+            self.flow2        = self._makeFlow([[self.baseCutName, self.baseCutString]]+self.inclList)
         self.flow         = self._makeFlow(self.inclList,self.baseCutString)
         self.combined     = self._combine(self.inclList,self.baseCutString)
         self.combinedList = [[self.name, self.combined]]
@@ -1543,10 +1545,10 @@ def fix(x):
 def fixForLatex(x):
   if type(x)==type(""):
     return fix(x)
-  if type(x) in [ type([]) ] : 
+  if type(x) in [ type([]), type(()) ] : 
     return [fix(ix) for ix in x]
   if type(x) in [ type(np.array([])) ]:
-    return np.array( [fix(ix) for ix in x] )
+    return np.array( [ fix(ix) for ix in x ] )
 
 
 
@@ -1558,11 +1560,12 @@ templateDir = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Work
 
 class JinjaTexTable():
     def __init__(self,yieldInstance, texDir="./tex/", pdfDir=pdfDir, outputName="",\
-                 searchpath=templateDir, template_file= "", removeJunk=True, tableNum=1, caption="", transpose=False):
+                 searchpath=templateDir, template_file= "", removeJunk=True, tableNum=1, caption="", title="", transpose=False):
         if not template_file:
             template_file = "LaTexTemplateWithFOM_v2.j2.tex"
         self.tableNum       = tableNum
         self.caption        = caption
+        self.title          = title
         self.template_file  = template_file 
         self.searchpath     = searchpath
         self.pdfDir         = pdfDir
@@ -1599,6 +1602,7 @@ class JinjaTexTable():
                       #autoescape = True,
                       loader=templateLoader )
         self.templateEnv.filters['fixForLatex']=fixForLatex
+        self.templateEnv.filters['fix']= fix
 
 
 
@@ -1623,27 +1627,28 @@ class JinjaTexTable():
                              "yieldDict"      :     ylds.getNiceYieldDict()  ,
                              "rowList"        :     ylds.sampleLegend,
                              "colList"        :     ylds.cutNames ,
+                             "title"          :     self.title,
+                             "caption"        :     self.caption,
                                 })
         else:
             self.info.update( {
                              "yieldDict"      :     ylds.getByBins( ylds.getNiceYieldDict() ) ,
                              "rowList"        :     ylds.cutNames ,
                              "colList"        :     ylds.sampleLegend,
+                             "title"          :     self.title,
+                             "caption"        :     self.caption,
                             })
 
-        self.makeTable(self.yields) 
+        self.makeTable(self.yields,self.outputName, self.info) 
 
-        removeJunk=True 
-        if removeJunk:
-            out = self.pdfDir+"/"+self.outputName
-            print "output:", self.outputTex
-            os.system("rm %s"%out.replace(".tex",".aux"))            
-            os.system("rm %s"%out.replace(".tex",".log"))            
+        #if transpose == "both":
+        #    self.makeTable(self.yields,self.outputName self.info) 
+        #    self.makeTable(self.yields,self.outputName self.info) 
 
-    def makeTable(self,yields ):
+    def makeTable(self,yields, outputName, info ):
         texTemplate = self.templateEnv.get_template( self.template_file )
         makeDir(self.texDir)  
-        self.outputTex = self.texDir + self.outputName
+        self.outputTex = self.texDir + outputName
         self.fout=open(self.outputTex,"w")
         #self.out = texTemplate.render( yields=self.yields, yieldTable=self.yields.FOMTable.T, TAB=self.tableNum, CAPTION=self.caption)
         self.out = texTemplate.render( 
@@ -1657,14 +1662,20 @@ class JinjaTexTable():
                                         #transpose=False,
                                         #TAB=self.tableNum, 
                                         #CAPTION=self.caption
-                                        **self.info
+                                        **info
                                     )
         print(self.out)
         self.fout.write( self.out)
         self.fout.close()
-        print "LaTex File:", self.texDir+self.outputName
+        print "LaTex File:", self.texDir+outputName
         os.system("pdflatex -output-directory=%s %s"%(self.pdfDir,self.outputTex))
 
 
+        removeJunk=True 
+        if removeJunk:
+            out = self.pdfDir+"/"+outputName
+            print "output:", self.outputTex
+            os.system("rm %s"%out.replace(".tex",".aux"))            
+            os.system("rm %s"%out.replace(".tex",".log"))            
 
 
