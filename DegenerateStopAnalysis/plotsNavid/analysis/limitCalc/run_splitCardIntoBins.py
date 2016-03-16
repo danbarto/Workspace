@@ -5,6 +5,17 @@ import glob
 
 from limitTools import *
 
+
+##
+#python run_splitCardIntoBins.py "../../data/cards/13TeV/Reload_IsrWeight/Full/T2*.txt" /afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins_v2/
+#python run_splitCardIntoBins.py "../cutbased/cards/8TeV/Full/T2DegStop_*.txt" /afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/8TeV/Bins_v2
+
+
+
+##
+
+
+
 call_script = "splitCardIntoBins.py"
 
 

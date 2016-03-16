@@ -51,6 +51,17 @@ if not os.path.isdir(output_dir):
 # define bins (signal is added automatically), observations and expectations
 #
 
+
+
+
+crBins  =  [
+            'CR1a',
+            'CR1b',
+            'CR1c',
+            'CR2',
+            'CRTT2',
+           ]  
+
 srBins = [ 
           'SRL1a',
           'SRH1a',
@@ -67,24 +78,26 @@ srBins = [
         ]
 
 srBinsToUse = {
-          'SRL1a':['SRL1a'],
-          'SRH1a':['SRH1a'],
-          'SRV1a':['SRV1a'],
-          'SRL1b':['SRL1b'],
-          'SRH1b':['SRH1b'],
-          'SRV1b':['SRV1b'],
-          'SRL1c':['SRL1c'],
-          'SRH1c':['SRH1c'],
-          'SRV1c':['SRV1c'],
-          'SRL2' :['SRL2' ],
-          'SRH2' :['SRH2' ],
-          'SRV2' :['SRV2' ],
+          'SRL1a':['SRL1a'  , "CR1a"],
+          'SRH1a':['SRH1a'  , "CR1a"],
+          'SRV1a':['SRV1a'  , "CR1a"],
+          'SRL1b':['SRL1b'  , "CR1b"],
+          'SRH1b':['SRH1b'  , "CR1b"],
+          'SRV1b':['SRV1b'  , "CR1b"],
+          'SRL1c':['SRL1c'  , "CR1c"],
+          'SRH1c':['SRH1c'  , "CR1c"],
+          'SRV1c':['SRV1c'  , "CR1c"],
+          'SRL2' :['SRL2'   , "CR2", "CRTT2"],
+          'SRH2' :['SRH2'   , "CR2", "CRTT2"],
+          'SRV2' :['SRV2'   , "CR2", "CRTT2"],
 
-          "SRSL1a": ['SRL1a', 'SRH1a', 'SRV1a'] ,
-          "SRSL1b": ['SRL1b', 'SRH1b', 'SRV1b'] ,
-          "SRSL1c": ['SRL1c', 'SRH1c', 'SRV1c'],
-          "SRSL2" : ['SRL2', 'SRH2', 'SRV2'],
-          "SRSL1" : ['SRL1a', 'SRH1a', 'SRV1a', 'SRL1b', 'SRH1b', 'SRV1b' , 'SRL1c', 'SRH1c', 'SRV1c' , 'SRL2', 'SRH2', 'SRV2' ]
+          "SRSL1a": ['SRL1a', 'SRH1a', 'SRV1a'] + ["CR1a"],
+          "SRSL1b": ['SRL1b', 'SRH1b', 'SRV1b'] + ["CR1b"],
+          "SRSL1c": ['SRL1c', 'SRH1c', 'SRV1c'] + ["CR1c"] ,
+          "SRSL2" : ['SRL2', 'SRH2', 'SRV2']    + ["CR2", "CRTT2"],
+          "SRSL1" : ['SRL1a', 'SRH1a', 'SRV1a', 'SRL1b', 'SRH1b', 'SRV1b' , 'SRL1c', 'SRH1c', 'SRV1c'  ] +[ "CR1a", "CR1b", "CR1c" ] ,
+
+          "ALL"   : srBins + crBins
     
         }
 

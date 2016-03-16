@@ -7,6 +7,10 @@ colors ={
               'qcd':           ROOT.kMagenta + 3, #ROOT.kRed -6         , 
               'wtau':          ROOT.kSpring-2       ,
               'wnotau':        ROOT.kSpring+2       ,
+              'dy1':           ROOT.kMagenta       ,
+              'dy2':           ROOT.kYellow        ,
+
+
 
               "s30":           ROOT.kRed+1          , 
               "s60FS":         ROOT.kOrange +7      , 

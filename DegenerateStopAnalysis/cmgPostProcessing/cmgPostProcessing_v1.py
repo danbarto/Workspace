@@ -567,6 +567,8 @@ def rwTreeClasses(sample, isample, args, temporaryDir, params={} ):
                     'mvaIdPhys14/F','lostHits/I', 'convVeto/I']},
         {'prefix':'Jet',  'nMax':100, 
             'vars':['pt/F', 'eta/F', 'phi/F', 'id/I','btagCSV/F', 'btagCMVA/F', 'mass/F']},
+      ])
+    readVectors_MC.extend([
         {'prefix':'GenPart',  'nMax':30, 
             'vars':['pt/F', 'eta/F', 'phi/F', 'pdgId/I', 'mass/F', 'motherId/I' ]},
       ])
@@ -809,7 +811,11 @@ def getTreeFromChunk(c, skimCond, iSplit, nSplit):
 
 
 
-def processGenSusyParticles(readTree,splitTree,saveTree):
+def processGenSusyParticles(readTree,splitTree,saveTree, sample):
+
+
+    if sample['cmgComp'].isData:
+        return
 
 
     genPart           =  cmgObject(readTree, "GenPart")
@@ -969,9 +975,9 @@ def processLeptons(leptonSelection, readTree, splitTree, saveTree, params):
 
     
 
-        saveTree.looseMuonIndex1     =  lepList[0] if saveTree.nMuons > 0 else -1
-        saveTree.looseMuonPt30Index2 =  lepPt30List[0] if saveTree.nMuonsPt30 > 0 else -1
-        saveTree.looseMuonIndex2     =  lepList[1] if saveTree.nMuons > 1 else -1
+        saveTree.looseMuonIndex1     =  lepList[0]     if saveTree.nMuons     > 0 else -1
+        saveTree.looseMuonPt30Index1 =  lepPt30List[0] if saveTree.nMuonsPt30 > 0 else -1
+        saveTree.looseMuonIndex2     =  lepList[1]     if saveTree.nMuons     > 1 else -1
         saveTree.looseMuonPt30Index2 =  lepPt30List[1] if saveTree.nMuonsPt30 > 1 else -1
 
         #if saveTree.nMuons:
@@ -1574,7 +1580,9 @@ def haddFiles(sample_name, filesForHadd, temporaryDir, outputWriteDirectory):
     size = 0
     counter = 0
     files = []
+    #print "VERBOSE:  ",  filesForHadd
     for f in filesForHadd:
+        #print "VERBOSE:  ",  f
         size += os.path.getsize(temporaryDir + '/' + f)
         files.append(f)
         if size > (maxFileSize * (10 ** 6)) or f == filesForHadd[-1] or len(files) > maxNumberFiles:
@@ -1792,6 +1800,8 @@ def cmgPostProcessing(argv=None):
         if args.processSignalScan:
             sample_name = "SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp)        
         outputWriteDirectory = os.path.join(outputDirectory, sample_name)
+        #print "VERBOSE:  name: ", sample['name']
+        #print "VERBOSE:  outputWriteDirectory", outputWriteDirectory
 
         if not os.path.exists(outputWriteDirectory):
             os.makedirs(outputWriteDirectory)
@@ -1958,7 +1968,7 @@ def cmgPostProcessing(argv=None):
                     # process event veto list flags
                     processEventVetoList(readTree,splitTree,saveTree, sample, event_veto_list)
 
-                    processGenSusyParticles(readTree,splitTree,saveTree)
+                    processGenSusyParticles(readTree,splitTree,saveTree,sample)
 
 
                     # compute the weight of the event
@@ -1977,6 +1987,11 @@ def cmgPostProcessing(argv=None):
                 
                 #fileTreeSplit = sample['name'] + '_' + chunk['name'] + '_' + str(iSplit) + '.root' 
                 fileTreeSplit = sample_name + '_' + chunk['name'] + '_' + str(iSplit) + '.root' 
+                if len(fileTreeSplit)> 256:
+                    fileTreeSplit = sample_name[:50] + '_' + chunk['name'][:50] + '_' + str(iSplit) + '.root'
+                    #print "---------------------- VERBOSE: %s, %s"%( len(fileTreeSplit), fileTreeSplit )
+
+
                 filesForHadd.append(fileTreeSplit)
 
                 if not testMethods:

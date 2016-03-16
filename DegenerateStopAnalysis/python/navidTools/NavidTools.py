@@ -228,7 +228,7 @@ def setEventListToChains(samples,sampleList,cutInst,verbose=True,opt="read"):
     for sample in sampleList:
       eListName="eList_%s_%s"%(sample,cutName)
       if samples[sample].has_key("dir"):
-        stringToBeHashed = "/".join( [samples[sample]['dir']] + sorted(samples[sample]['sample']['bins']) ) 
+        stringToBeHashed = "/".join( [samples[sample]['dir']] + sorted(samples[sample]['sample']['bins'])+ [cutString] ) 
         sampleHash = hashlib.sha1(stringToBeHashed).hexdigest()
         eListName +="_%s"%sampleHash
       setEventListToChain(samples[sample]['tree'],cutString,eListName=eListName,verbose=False,opt=opt)
@@ -257,7 +257,7 @@ def decorHist(samp,cut,hist,decorDict):
     if dd.has_key("title"):
         title = dd['title']
         title = title.format(CUT=cut.name, SAMP=samp.name )
-        hist.SetName(getAllAlph(samp.name+dd["title"]))
+        hist.SetName(getAllAlph(samp.name+"_"+cut.name+"_"+dd["title"]))
         hist.SetTitle(title)
     if dd.has_key("color") and dd['color']:
         hist.SetLineColor(dd['color'])
@@ -531,6 +531,7 @@ def getSigBkgDataLists ( samples, sampleList):
 def makeLegend(samples, hists, sampleList, plot, name="Legend",loc=[0.6,0.6,0.9,0.9],borderSize=0,legOpt="f"):
 
     leg = ROOT.TLegend(*loc)
+    leg.SetName(name)
     leg.SetFillColorAlpha(0,0.001)
     leg.SetBorderSize(borderSize)
 
@@ -559,6 +560,7 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
                 'hists':hists       ,
                 'fomHists':{}       ,
                 'sigBkgDataList': [sigList,bkgList,dataList],
+                'legs':[]           ,
                 })
     isDataPlot = bool(len(dataList))
     if isDataPlot:
@@ -609,7 +611,7 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
             dataHist.SetMarkerSize(1.2)
             dOpt+=""
         stacks['sig'][p].Draw("%s nostack"%dOpt.replace("hist",""))
-        print "!!!!!!!!!!!!!!!!!!!!" , refStack, getattr(refStack,"Get%saxis"%"y".upper() )()
+        #print "!!!!!!!!!!!!!!!!!!!!" , refStack, getattr(refStack,"Get%saxis"%"y".upper() )()
         #if True: return refStack, ret
         if plots[p].has_key("decor"):
             if plots[p]['decor'].has_key("y") : decorAxis( refStack, 'y', plots[p]['decor']['y'], tOffset=1 )
@@ -621,15 +623,15 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
         if plotMin: refStack.SetMinimum( plotMin )
         if plotLimits: 
             refStack.SetMinimum( plotLimits[0] )
-        refStack.SetMaximum( refStack.GetMaximum() * 10 )
+        refStack.SetMaximum( refStack.GetMaximum() * 30 )
 
         if leg:    #MAKE A LEGEND FUNCTION
-            bkgLeg = makeLegend(samples, hists, bkgList, p, loc= [0.7,0.7,0.9,0.9] , name="Legend_bkgs_%s_%s"%(cut.name, p), legOpt="f" )
-            sigLeg = makeLegend(samples, hists, sigList, p, loc= [0.4,0.75,0.7,0.9] , name="Legend_sigs_%s_%s"%(cut.name, p), legOpt="l" )
+            bkgLeg = makeLegend(samples, hists, bkgList, p, loc= [0.75,0.67 ,0.9 ,0.87 ] , name="Legend_bkgs_%s_%s"%(cut.name, p), legOpt="f" )
+            sigLeg = makeLegend(samples, hists, sigList, p, loc= [0.5 ,0.67,0.75,0.87] , name="Legend_sigs_%s_%s"%(cut.name, p), legOpt="l" )
 
             bkgLeg.Draw()
             sigLeg.Draw()
-            ret.update( {'legs':[sigLeg, bkgLeg]})
+            ret['legs'].append([sigLeg, bkgLeg])
 
             #leg = ROOT.TLegend(0.6,0.6,0.9,0.9)
             #leg.SetFillColorAlpha(0,0.001)
@@ -652,6 +654,12 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
         if isDataPlot:
             latex.DrawLatex(0.16,0.91,"#font[22]{CMS Preliminary}")
             latex.DrawLatex(0.7,0.91,"#bf{L=%0.2f fb^{-1} (13 TeV)}"%( round(samples[dataList[0]].lumi/1000.,2)) )
+        else:
+            latex.DrawLatex(0.16,0.91,"#font[22]{CMS Simulation}")
+            latex.DrawLatex(0.7,0.91,"#bf{L=%0.2f fb^{-1} (13 TeV)}"%( round(samples[sampleList[0]].lumi/1000.,2)) )
+            #### asumes all samples in the sampleList have the same .lumi
+
+
         canvs[p][cSave].Update()
 
         if save:
@@ -699,9 +707,12 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
             fomHists[plot][denom]={}  
             ## Getting the total BKG hist
             if bkgList:
-                hists['bkg'][plot]=stacks['bkg'][plot].GetHists()[0].Clone( "stack_%s"%plot)
+                #hists['bkg'][plot]=stacks['bkg'][plot].GetHists()[0].Clone( "stack_%s"%plot)
+                hists['bkg'][plot]=stacks['bkg'][plot].GetHists()[0].Clone()
                 hists['bkg'][plot].Reset()
-                hists['bkg'][plot].SetTitle("stack_%s"%plot)
+                stack_name = "stack_%s"%stacks['bkg'][plot].GetHists()[0].GetName()
+                hists['bkg'][plot].SetName(  stack_name  )
+                hists['bkg'][plot].SetTitle( stack_name   )
                 hists['bkg'][plot].Merge( stacks['bkg'][plot].GetHists() )
             if denom:
                 fomHists[plot][denom]['denom']=hists[denom][plot]
@@ -855,6 +866,15 @@ def draw2DPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],min=False,log
                 if not os.path.isdir(saveDir): os.mkdir(saveDir) 
                 canvs[plotName].SaveAs(saveDir+"/%s.png"%plotTitle)
     return ret
+
+
+
+def saveDrawOutputToFile( drawOut, fileOut):
+    canvs = drawOut['canvs']
+    fileOut.cd()
+    for canv in canvs:
+        canvs[canv][0].Write()
+    return fileOut 
 
 
 
@@ -1224,7 +1244,7 @@ class Yields():
         Usage:
         y=Yields(samples,['tt', 'w','s'],cuts.presel,tableName='{cut}_test',pklOpt=1);
     '''
-    def __init__(self,samples,sampleList,cutInst,cutOpt='flow',tableName='{cut}',weight="(weight)",pklOpt=False,pklDir="./pkl/",nDigits=2, err=True, verbose=False):
+    def __init__(self,samples,sampleList,cutInst,cutOpt='flow',tableName='{cut}',weight="(weight)",pklOpt=False,pklDir="./pkl/",nDigits=2, err=True, verbose=False, nSpaces=17):
         if not (isinstance(cutInst,CutClass) or hasattr(cutInst,cutOpt)):
             raise Exception("use an instance of cutClass")
         self.nDigits        = nDigits
@@ -1236,9 +1256,8 @@ class Yields():
         self.sampleList.sort(key = lambda x: samples[x]['isSignal'])
         self.npsize="|S20"
         self.err = err
+        self.nSpaces =  nSpaces 
 
-        #self.bkgList        = [sample for sample in sampleList if not samples[sample]['isSignal']]
-        #self.sigList        = [sample for sample in sampleList if sample not in self.bkgList]
         self.updateSampleLists(samples,self.sampleList)
 
         self.cutList        = getattr(cutInst,cutOpt)
@@ -1300,15 +1319,21 @@ class Yields():
                 raise Exception("The new yield dictionary seems to have different cuts than the current one  %s \n vs. %s"%(cuts, sorted( list(self.cutLegend[0][1:]) ) ))
         self.yieldDict.update(yieldDict)
 
-    def makeNumpyFromDict(self, yieldDict,xList=[]):
+    def makeNumpyFromDict(self, yieldDict=None,rowList=[]):
         """
         """
         exps = []
-        
-        if not xList:
-            xList = yieldDict.keys()
-        for samp in xList: 
-            exps.append( np.array([samp]+[ yieldDict[samp][cut] for cut in self.cutNames] , self.npsize) )
+        if not yieldDict:
+            yieldDict = self.yieldDictFull        
+        if not rowList:
+            rowList = self.sampleList
+        first = True
+        for samp in rowList: 
+            if first:
+                #exps.append( np.array([samp]+[ yieldDict[samp][cut] for cut in self.cutNames] , self.npsize) )
+                exps.append( np.array([ self.sampleNames[samp] ]+[ yieldDict[samp][cut] for cut in self.cutNames] , self.npsize) )
+            else:
+                exps.append( np.array([samp]+[ yieldDict[samp][cut] for cut in self.cutNames] , self.npsize) )
         return np.concatenate(  [ self.cutLegend, np.array(exps)] )                                            
             
 
@@ -1322,10 +1347,20 @@ class Yields():
         if not yieldDict: yieldDict = self.yieldDictFull
         return { bin: { samp:yieldDict[samp][bin] for samp in yieldDict.keys() } for bin in self.cutNames}  
 
+    #def round(val, nDigits):
+    #    if hasattr(val,"round"):
+    #        return val.round(nDigits)
+    #    else:
+    #        return round(val, nDigits)
+
     def getBkgTotal(self, yieldDict):
         yieldDictTotal={}
         for cut in self.cutNames:
-            yieldDictTotal[cut] =   sum( [ yieldDict[samp][cut] for samp in self.bkgList  ] ).round(self.nDigits ) 
+            #yieldDictTotal[cut] =   sum( [ yieldDict[samp][cut] for samp in self.bkgList  ] ).round(self.nDigits ) 
+            summed = sum( [ yieldDict[samp][cut] for samp in self.bkgList  ] )
+            #print [ yieldDict[samp][cut] for samp in self.bkgList  ]
+            #print summed
+            yieldDictTotal[cut] =   summed.round( self.nDigits ) 
         #return {'Total':yieldDictTotal}
         return yieldDictTotal
 
@@ -1357,7 +1392,8 @@ class Yields():
     def getYieldsForSample(self,samples,sample, cutList ):
         yieldDictSample={}
         for ic, cut in enumerate(cutList):
-            yld = getYieldFromChain(samples[sample]['tree'], cut[1],self.weights[sample], returnError=self.err) #,self.nDigits) 
+            yld = getYieldFromChain( samples[sample]['tree'], cut[1],self.weights[sample], returnError=self.err) #,self.nDigits) 
+            #print cut[0], "     ", "getYieldFromChain( %s, '%s', '%s',%s )"%( "samples."+sample+".tree", cut[1], self.weights[sample], True) + "==(%s,%s)"%yld 
             if self.err:
                     rounded = [ round(x,self.nDigits) for x in yld ] 
                     yld = u_float(*rounded)
@@ -1367,17 +1403,21 @@ class Yields():
             self.yieldDictFull[sample][cut[0]] = yld
             #self.yieldDictRaw[sample].append(yld)
         if self.verbose:  
-            print sample, yieldDictSample
+            
+            self.pprint( [np.array([self.sampleNames[sample]]+[ yieldDictSample[cut] for cut in self.cutNames] , self.npsize)] , nSpaces=self.nSpaces   )     
+            #self.pprint( yieldDictSample, nSpaces=14) 
+            #print sample, yieldDictSample
         return yieldDictSample
 
     
 
     def getYields2(self,samples,cutList):
         yieldDict={}
+        if self.verbose: self.pprint(  self.cutLegend  , nSpaces=self.nSpaces )
         for samp in self.sampleList:
             yieldDict[samp] = self.getYieldsForSample(samples,samp, cutList )
         self.yieldDict = yieldDict
-        print yieldDict
+        #print yieldDict
         return yieldDict
         
     def getYieldDictFull(self, samples, cutList, yieldDict=None, yieldDictTotal=None, yieldDictFOMs=None,  fom="AMSSYS", uncert=0.2, nDigits = 3 ):
@@ -1396,6 +1436,9 @@ class Yields():
         self.yieldDictFOMs  = yieldDictFOMs
         self.yieldDictFull  = yieldDictFull
 
+        self.FOMTable       =   self.makeNumpyFromDict(self.yieldDict)
+        self.table          =   self.makeNumpyFromDict(self.yieldDictFull)
+
         self.LatexTitles    = {}
         self.LatexTitles.update({ samp:self.sampleNames[samp] for samp in self.sampleNames})
         self.LatexTitles.update({ fomName:self.fomNames[fomName] for fomName in self.fomNames }) 
@@ -1405,39 +1448,39 @@ class Yields():
         return yieldDictFull
 
 
-    ########################
-    ##### Old Function #####
-    ########################
+    #   ########################
+    #   ##### Old Function #####
+    #   ########################
 
-    def getYields(self,samples, cutList ):
-        for sample in self.sampleList:
-            for ic, cut in enumerate(cutList):
-                yld = getYieldFromChain(samples[sample]['tree'], cut[1],self.weights[sample], returnError=self.err) #,self.nDigits) 
-                if self.err:
-                        rounded = [ round(x,self.nDigits) for x in yld ] 
-                        yld = u_float(*rounded)
-                else:
-                        yld = u_float(yld)
-                self.yieldDictFull[sample][cut[0]] = yld
-                self.yieldDictRaw[sample].append(yld)
-            if self.verbose:  print sample, self.yieldDictRaw[sample]
-        self.yieldDictRaw['Total']    = [ sum(x).round(self.nDigits) for x in zip(*[self.yieldDictRaw[sample] for sample in self.bkgList])    ]
-        #self.yieldDictRaw['Total']    = [ round(x,self.nDigits) for x in self.yieldDictRaw['Total'] ]
-        self.yieldDict={}
-        for sample in self.sampleList:
-            self.yieldDict[sample]            = np.array( [samples[sample]['name']] +self.yieldDictRaw[sample],dtype='|S20' ) 
-        self.yieldDict["Total"]         = np.array(["Total"]+ self.yieldDictRaw['Total'],dtype='|S20')
-        self.yields = np.concatenate( [ [self.yieldDict[t]] for t in self.bkgList +['Total'] + self.sigList ] )
-        self.table    = np.concatenate( [ self.cutLegend , self.yields ] )
-        if self.sigList and self.bkgList:
-            for sig in self.sigList:
-                    #sig = self.sigList[0] #### need to fix for multiple signals
-                    #self.yieldDict["FOM"]             = np.array(["FOM"]+ [ round(calcFOMs(self.yieldDictRaw[sig][ic] , self.yieldDictRaw["Total"][ic] ,0.2,"AMSSYS" ),2 )
-                    #                                    for ic, cut in enumerate(self.cutList) ] , dtype='|S8')
-                    self.yieldDict["FOM_%s"%sig]             = np.array(["FOM_%s"%samples[sig]['name'] ]+ [ round(calcFOMs( self.yieldDictRaw[sig][ic] , self.yieldDictRaw["Total"][ic] , 0.2, "AMSSYS"), 3 )
-                                                                 for ic, cut in enumerate(cutList) ] , dtype='|S20')
-            self.FOM = np.concatenate( [ [self.yieldDict[t]] for t in self.bkgList +['Total'] + self.sigList + ['FOM_%s'%x for x in self.sigList] ] )
-            self.FOMTable = np.concatenate( [ self.cutLegend , self.FOM ] )
+    #   def getYields(self,samples, cutList ):
+    #       for sample in self.sampleList:
+    #           for ic, cut in enumerate(cutList):
+    #               yld = getYieldFromChain(samples[sample]['tree'], cut[1],self.weights[sample], returnError=self.err) #,self.nDigits) 
+    #               if self.err:
+    #                       rounded = [ round(x,self.nDigits) for x in yld ] 
+    #                       yld = u_float(*rounded)
+    #               else:
+    #                       yld = u_float(yld)
+    #               self.yieldDictFull[sample][cut[0]] = yld
+    #               self.yieldDictRaw[sample].append(yld)
+    #           if self.verbose:  print sample, self.yieldDictRaw[sample]
+    #       self.yieldDictRaw['Total']    = [ sum(x).round(self.nDigits) for x in zip(*[self.yieldDictRaw[sample] for sample in self.bkgList])    ]
+    #       #self.yieldDictRaw['Total']    = [ round(x,self.nDigits) for x in self.yieldDictRaw['Total'] ]
+    #       self.yieldDict={}
+    #       for sample in self.sampleList:
+    #           self.yieldDict[sample]            = np.array( [samples[sample]['name']] +self.yieldDictRaw[sample],dtype='|S20' ) 
+    #       self.yieldDict["Total"]         = np.array(["Total"]+ self.yieldDictRaw['Total'],dtype='|S20')
+    #       self.yields = np.concatenate( [ [self.yieldDict[t]] for t in self.bkgList +['Total'] + self.sigList ] )
+    #       self.table    = np.concatenate( [ self.cutLegend , self.yields ] )
+    #       if self.sigList and self.bkgList:
+    #           for sig in self.sigList:
+    #                   #sig = self.sigList[0] #### need to fix for multiple signals
+    #                   #self.yieldDict["FOM"]             = np.array(["FOM"]+ [ round(calcFOMs(self.yieldDictRaw[sig][ic] , self.yieldDictRaw["Total"][ic] ,0.2,"AMSSYS" ),2 )
+    #                   #                                    for ic, cut in enumerate(self.cutList) ] , dtype='|S8')
+    #                   self.yieldDict["FOM_%s"%sig]             = np.array(["FOM_%s"%samples[sig]['name'] ]+ [ round(calcFOMs( self.yieldDictRaw[sig][ic] , self.yieldDictRaw["Total"][ic] , 0.2, "AMSSYS"), 3 )
+    #                                                                for ic, cut in enumerate(cutList) ] , dtype='|S20')
+    #           self.FOM = np.concatenate( [ [self.yieldDict[t]] for t in self.bkgList +['Total'] + self.sigList + ['FOM_%s'%x for x in self.sigList] ] )
+    #           self.FOMTable = np.concatenate( [ self.cutLegend , self.FOM ] )
 
 
     def pickle(self,pklOpt,pklDir):
@@ -1465,7 +1508,7 @@ class Yields():
 
     def pprint(self, table=None, nSpaces=17, align="<"):
         if table is None:
-            table = self.FOMTable
+            table = self.FOMTable.T
         block = "| {:%s%s}"%(align,nSpaces)
         #ret = [( block*len(line) ).format(*map(lambda x: "%s"%x,line)) for line in a.T]
         ret = [( block*len(line) ).format(*line) for line in table]
@@ -1488,7 +1531,8 @@ class Yields():
 
 
 texDir="./tex/"
-pdfDir="/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/analysis/RunII/cutbased/dmt_regions/tables/"
+#pdfDir="/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/analysis/RunII/cutbased/dmt_regions/tables/"
+pdfDir="/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/Test/"
 pklDir="./pkl/dmt_regions/*.pkl"
 
 

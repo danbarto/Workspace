@@ -55,7 +55,7 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
     #             (Flag_METFilters) &&\
     #             (Flag_eeBadScFilter))'
 
-    data_filters = "Flag_METFILTERS && Flag_Veto_Event_List"
+    data_filters = "Flag_METFilters && Flag_Veto_Event_List"
     data_triggers= "HLT_PFMET170_JetIdCleaned"
 
     sampleDict = {}
@@ -114,11 +114,19 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
           METDataBlind    = getChain(cmgPP.MET_v4[skim],histname='')
           METDataBlind.Add(METDataOct05)
           sampleDict.update( {
-              "d":              {'tree':METDataUnblind       ,"sample":cmgPP.MET_Oct05[skim]   ,'name':"DataUnblind"      , 'color':ROOT.kBlack             , 'isSignal':0 ,'isData':1    ,"triggers":""   ,"filters":""   ,"weight":"(1)"  ,'lumi': lumi_data_unblinded  },
-              "dblind":         {'tree':METDataBlind         ,"sample":cmgPP.MET_v4[skim]      ,'name':"DataBlind" , 'color':ROOT.kBlack          , 'isSignal':0 ,'isData':1              ,"triggers":data_triggers   ,"filters":""   ,"weight":"(1)"  ,'lumi': lumi_data_blinded  },
+              "d":              {'tree':METDataUnblind       ,"sample":cmgPP.MET_Oct05[skim]   ,'name':"DataUnblind"      , 'color':ROOT.kBlack             , 'isSignal':0 ,'isData':1    ,"triggers":data_triggers   ,"filters":data_filters   ,"weight":"(1)"  ,'lumi': lumi_data_unblinded  },
+              "dblind":         {'tree':METDataBlind         ,"sample":cmgPP.MET_v4[skim]      ,'name':"DataBlind" , 'color':ROOT.kBlack          , 'isSignal':0 ,'isData':1              ,"triggers":data_triggers   ,"filters":data_filters   ,"weight":"(1)"  ,'lumi': lumi_data_blinded  },
                 })
         else:
             assert False
+
+    if "dy" in sampleList:
+        DYJetsSample        = getChain(cmgPP.DYJetsM5to50HT[skim],histname='')
+        sampleDict.update({
+              'dy1':             {'sample':cmgPP.DYJetsM5to50HT[skim]            ,'name':'DYJetsM5to50'  ,'color':colors['dy1']            , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },
+                        }) 
+
+
 
     if wtau:
         print "Getting the Tau and Non-Tau components of WJets"
@@ -129,6 +137,7 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
             'wtau':            {'sample':WJetsTauSample        ,'name':'WTau%s'%htString          ,'color':colors['wtau']          , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      } ,
             'wnotau':          {'sample':WJetsNoTauSample       ,'name':'WNoTau%s'%htString        ,'color':colors['wnotau']          , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      }, 
             })
+
 
 
 
@@ -154,8 +163,8 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
       sampleDict2[samp]=Sample(**sampleDict[samp])
     samples = Samples(**sampleDict2)
 
-    samples.addWeight( lumi_target/lumi_mc , sampleList=[])         ## scale to the target luminosity
-    samples.addWeight( weights.isrWeight(9.5e-5)  , sampleList=samples.massScanList())   ## apply isrWeight to the massScan
+    samples.addLumiWeight( lumi_target = lumi_target, lumi_base = lumi_mc , sampleList=[])         ## scale to the target luminosity
+    samples.addWeight( weights.isrWeight(9.5e-5)  , sampleList=samples.sigList())   ## apply isrWeight to the massScan
 
     return samples
 

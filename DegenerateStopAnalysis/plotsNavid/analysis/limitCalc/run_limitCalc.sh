@@ -29,19 +29,23 @@ cardDir="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/
 
 
 
-cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins/"
+cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins_v2/"
 cardPattern="T2_4bd*.txt"
-
 #for card in `ls $cardDirs/$cardPattern`
 for cardDir in `ls -d $cardDirs/*`
     do 
     cardDirBase=`basename $cardDir`
-    #echo $cardDir
-    #echo $cardDirBase  ${cardDir##*/}
-
-    #echo ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  
     ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  &
     done
 
 
+wait 
 
+cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/8TeV/Bins_v2/"
+cardPattern="T2*.txt"
+#for card in `ls $cardDirs/$cardPattern`
+for cardDir in `ls -d $cardDirs/*`
+    do 
+    cardDirBase=`basename $cardDir`
+    ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  &
+    done

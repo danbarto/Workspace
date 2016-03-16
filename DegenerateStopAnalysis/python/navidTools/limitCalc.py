@@ -25,7 +25,8 @@ def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, s
     c.addUncertainty("Sys", 'lnN')
 
     
-    bins = yld.cutLegend[0][1:]
+    #bins = yld.cutLegend[0][1:]
+    bins = yld.cutNames
     bkgs = yld.bkgList
       
     if not sig:
@@ -37,8 +38,9 @@ def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, s
         
         
 
-    processNames = { bkg:yld.yieldDict[bkg][0] for bkg in bkgs}
-    #processNames.update(  { sig:yld.yieldDict[sig][0] } )
+    #processNames = { bkg:yld.yieldDictFull[bkg][0] for bkg in bkgs}
+    processNames = yld.sampleNames
+    #processNames.update(  { sig:yld.yieldDictFull[sig][0] } )
     #processNames.update(  { sig:'signal'} )
     processNames.update(  { 'signal':'signal'} )
 
@@ -46,16 +48,16 @@ def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, s
 
     for iBin, bin in enumerate(bins,1):
         c.addBin(bin,[processNames[bkg] for bkg in bkgs],bin)
-        c.specifyObservation(bin,int( get_float(yld.yieldDict["Total"][iBin]) ))
+        c.specifyObservation(bin,int( get_float(yld.yieldDictFull["Total"][bin]) ))
         sysName = "Sys_%s"%(bin)
         c.addUncertainty(sysName, 'lnN')
         c.addUncertainty(sysName+"_sig", 'lnN')
         for bkg in bkgs:
-          c.specifyExpectation(bin,processNames[bkg],get_float(yld.yieldDict[bkg][iBin]))
+          c.specifyExpectation(bin,processNames[bkg],get_float(yld.yieldDictFull[bkg][bin]))
           c.specifyUncertainty('Sys',bin,processNames[bkg],sys_corr)
           #sysName = "Sys_%s"%bkg
           c.specifyUncertainty(sysName,bin,processNames[bkg],sys_uncorr)
-        c.specifyExpectation(bin,"signal",get_float(yld.yieldDict[sig][iBin]))
+        c.specifyExpectation(bin,"signal",get_float(yld.yieldDictFull[sig][bin]))
         c.specifyUncertainty(sysName+"_sig",bin,'signal',sys_uncorr)
         #c.specifyUncertainty('Sys',bin,"signal",sys_corr)
     badBins=[]
@@ -85,7 +87,8 @@ def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, s
     for bin in badBins:
         c.bins.remove(bin)
     
-    sigName  =  yld.yieldDict[sig][0]
+    #sigName  =  yld.yieldDictFull[sig][0]
+    sigName  =  yld.sampleNames[sig]
     filename =  sigName + "_" + yld.tableName
     if postfix:
         if not postfix.startswith("_"):

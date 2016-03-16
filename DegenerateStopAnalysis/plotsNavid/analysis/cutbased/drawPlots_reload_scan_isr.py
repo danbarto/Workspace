@@ -9,9 +9,11 @@ import sys,os
 
 from Workspace.DegenerateStopAnalysis.cuts.cuts import *
 from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import *
-from Workspace.DegenerateStopAnalysis.navidTools.makeTable import *
-from Workspace.DegenerateStopAnalysis.navidTools.limitCalc import  getLimit, plotLimits
 
+#from Workspace.DegenerateStopAnalysis.navidTools.makeTable import *
+
+from Workspace.DegenerateStopAnalysis.navidTools.limitCalc import  getLimit, plotLimits
+import Workspace.DegenerateStopAnalysis.navidTools.limitTools as limitTools
 
 
 
@@ -29,6 +31,16 @@ mc_path     = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass
 signal_path = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/RunIISpring15DR74_25ns"
 data_path   = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/Data_25ns"
 
+lumis = {
+            #'lumi_mc':10000, 
+            'lumi_target':2300.,
+            'lumi_data_blinded':2245.386,
+            'lumi_data_unblinded':139.63,
+        }
+
+lumi_tag = lambda l: "%0.0fpbm1"%(l)
+
+lumiTag = lumi_tag(lumis['lumi_target'])
 
 
 
@@ -41,22 +53,24 @@ sampleList= args.sampleList
 process = args.process
 useHT   = args.useHT
 
-runtag = "isrweight_v1"
+runTag = "isrweight_v5_FixedCuts"
+
 doscan = True
 
 
-scantag = "_Scan" if doscan else ""
+scanTag = "_Scan" if doscan else ""
 
 print args, sampleList ,  process
 htString = "HT" if useHT else "Inc"
 
+fullTag = "%s_%s_%s"%( runTag , lumiTag , htString )
 
-
-saveDir = '/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/%s/%s'%(runtag,htString)
+saveDir = '/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/%s/%s'%(runTag,htString)
 plotDir = saveDir +"/DataPlots/" 
 
 #sampleList         = [ 's30'   , 's10FS' , 's40FS'  ,'s30FS', 't2tt30FS','wtau','wnotau' , 'qcd'     ,'z'    , 'tt' ,  'w' ,'dblind','d']
-sampleList          = [ 's30'   , 's10FS' , 's40FS'  ,'s30FS', 't2tt30FS','qcd'     ,'z'    , 'tt' ,  'w' ,'dblind','d']
+#sampleList          = [ 's30'   , 's10FS' , 's40FS'  ,'s30FS', 't2tt30FS', 's225_215', 's225_145' ,'qcd'     ,'z'    , 'tt' ,  'w' ,'dblind','d']
+sampleList          = [ 's30'   , 's10FS' , 's40FS'  ,'s30FS', 't2tt30FS', 's225_215', 's225_145' ,'qcd'     ,'z'    , 'tt' ,  'w' ,'dblind','d']
 try:
     samples
 except NameError:
@@ -75,15 +89,19 @@ plotListSR = ["LepPtSR","mtSR"] + plotList
 plotListCR = plotList
 
 
-doDataPlots = process
 #doDataPlots = False
+doDataPlots = process
+
+#tfile = ROOT.TFile(saveDir+"/%s.root"%fullTag ,"recreate")      
+ROOT.gDirectory.cd("PyROOT:/")
+tfile = ROOT.TFile("%s.root"%fullTag ,"recreate")      
+
 if doDataPlots:
     yields={}
-    tfile = ROOT.TFile("test.root","new")      
+    plts=[]
 
     #sampleList         = [  's10FS' , 's30FS' ,'s60FS'   , 'z', 'qcd'      , 'tt' ,  'w' ] 
     #sampleList         = [  's225_215', 's225_145', 'z', 'qcd'      , 'tt' ,  'w' ] 
-
     sigList     = [ 's225_215', 's225_145' ]
     #sigList     = [ 's10FS' , 's30FS' ,'s60FS'  ] 
     bkgList     = [ 'z', 'qcd'      , 'tt' ,  'w' ]
@@ -97,6 +115,8 @@ if doDataPlots:
     srSampleList       = sampleList + ['d']
     fomLimits          = [0,3]
 
+
+
     cutInst = cr1
     sampleList = crSampleList
     setEventListToChains(samples,sampleList, cutInst)
@@ -104,7 +124,9 @@ if doDataPlots:
     pl_cr1 = drawPlots(samples,    plots.plots , cutInst, sampleList= sampleList,
                     plotList= plotListCR ,save=plotDir, plotMin=0.01,
                     normalize=False, denoms=["bkg"], noms=["dblind"], fom="RATIO", fomLimits=fomLimits)
+    plts.append(pl_cr1)
 
+    
 
     cutInst = cr2
     sampleList = crSampleList
@@ -113,6 +135,8 @@ if doDataPlots:
     pl_cr2 = drawPlots(samples,    plots.plots , cutInst, sampleList= [ "z","qcd","w","tt"]+sigList+[ "dblind"],
                     plotList= plotListCR ,save=plotDir, plotMin=0.01,
                     normalize=False, denoms=["bkg"], noms=["dblind"], fom="RATIO", fomLimits=fomLimits)
+    plts.append(pl_cr2)
+
 
 
 
@@ -120,10 +144,10 @@ if doDataPlots:
     sampleList = crSampleList
     setEventListToChains(samples,sampleList ,cutInst)
     getPlots(samples, plots.plots , cutInst , sampleList= sampleList , plotList=plotListCR , addOverFlowBin='both',weight="weight"  )
-    pl_crtt = drawPlots(samples,    plots.plots , cutInst, sampleList= [ "z","qcd","w","tt"]+ sigList + ["dblind"],
+    pl_crtt2 = drawPlots(samples,    plots.plots , cutInst, sampleList= [ "z","qcd","w","tt"]+ sigList + ["dblind"],
                     plotList= plotListCR ,save=plotDir, plotMin=0.01,
                     normalize=False, denoms=["bkg"], noms=["dblind"], fom="RATIO", fomLimits=fomLimits)
-
+    plts.append(pl_crtt2)
 
     cutInst = presel
     sampleList = srSampleList
@@ -132,6 +156,7 @@ if doDataPlots:
     pl_presel = drawPlots(samples,    plots.plots , cutInst, sampleList= sampleList,
                     plotList= plotListSR ,save=plotDir, plotMin=0.001,
                     normalize=False, denoms=["bkg"], noms=["d"], fom="RATIO", fomLimits=fomLimits)
+    plts.append(pl_presel)
 
     cutInst = sr1
     sampleList = srSampleList
@@ -140,6 +165,7 @@ if doDataPlots:
     pl_sr1 = drawPlots(samples,    plots.plots , cutInst, sampleList= sampleList,
                     plotList= plotListSR ,save=plotDir, plotMin=0.001,
                     normalize=False, denoms=["bkg"], noms=["d"], fom="RATIO", fomLimits=fomLimits)
+    plts.append(pl_sr1)
 
     cutInst = sr2
     sampleList = srSampleList
@@ -150,14 +176,19 @@ if doDataPlots:
     pl_sr2 = drawPlots(samples,    plots.plots , cutInst, sampleList= ["z", 'qcd',"w",'tt'] +sigList+["d"],
                     plotList= plotListSR ,save=plotDir, plotMin=0.001,
                     normalize=False, denoms=["bkg"], noms=["d"], fom="RATIO", fomLimits=fomLimits)
+    plts.append(pl_sr2)
+
+    for pl in plts:
+        saveDrawOutputToFile(pl, tfile)
 
 
-    tfile.Write()
-    tfile.Close()
+    #tfile.Write()
+    #tfile.Close()
 
 tableDir=saveDir+"/Tables/"
-if not os.path.isdir(tableDir):
-    os.mkdir(tableDir)
+makeDir(tableDir)
+#if not os.path.isdir(tableDir):
+#    os.mkdir(tableDir)
 
 
 cutInsts= {
@@ -169,6 +200,8 @@ cutOpt = cutInsts[cutInstStr]['opt']
 
 #calcTrkCutLimit = False
 calcTrkCutLimit = process
+
+redo = True
 if calcTrkCutLimit:
 
     limits={}
@@ -176,56 +209,43 @@ if calcTrkCutLimit:
 
     bkgListForTable = [  'qcd' ,'z'   ,    'tt',  'w' ] 
     sigListForTable = [  's30'   , 's30FS' , 's10FS' , 's60FS'   , 't2tt30FS' ] 
-    scanListForTable = [s for s in samples if samples[s].isSignal and s not in sigListForTable]
-    scanListForTable = [s for s in samples if samples[s].isSignal and not any(x in s for x in ["s350_290","s325_275","s375_315","s350_270"]) and s not in sigListForTable]
-    #sampleList = scanListForTable  + sigListForTable + bkgListForTable
-    sampleList = scanListForTable  + bkgListForTable
+
+    scanListForTable = samples.massScanList()
+    sampleList = scanListForTable  + bkgListForTable + sigListForTable
     print sampleList
     
-
-    setEventListToChains(samples,sampleList,presel)
 
     print "Getting Yields"
     cutName = "runI_%s"%htString
     runI.name = runI.name + "_" + htString
-    yields[cutName]=Yields(samples, sampleList, runI, cutOpt= "list2" , weight="weight",pklOpt=True , tableName = "{cut}_%s%s"%(runtag,scantag),nDigits=2,err=True, verbose=True)
-    #limits[cutName]=getLimit(yields[cutName])
-    JinjaTexTable(yields[cutName],pdfDir=tableDir, caption="" )
-    #getLimit(yields[cutName], cardBaseName = "" )
-    #pl2 = plotLimits(limits)
-    #pl2.Draw()
 
 
-    #signalList = [s for s in sampleList if samples[s].isSignal ]
     if doscan:
         signalList=  scanListForTable
 
         limits = {}
-        for sig in signalList:
-            #limits[sig] = getLimit(yields[cutName], sig=sig , cardBaseName = "mass_scan_isr/isrrw")
-            limits[sig] = getLimit(yields[cutName], sig=sig , outDir="./cards/13TeV/HT/IsrWeight_10000pbm1" , postix= htString +"_" + runtag + scantag)
+        cardDirBase = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/"
+        cardDir = cardDirBase + "cards/13TeV/%s/%s_%s"%(htString,lumiTag,runTag)
+        limitPkl = cardDirBase + "cards/13TeV/%s/%s_%s.pkl"%(htString,lumiTag,runTag)
+        makeDir(cardDir)
+        
+        if os.path.isfile(limitPkl) and not redo:
+            limits = pickle.load( file(limitPkl) )
+        else:
+            setEventListToChains(samples,sampleList,presel)
+            yields[cutName]=Yields(samples, sampleList, runI, cutOpt="list2",weight="weight",pklOpt=True,tableName="{cut}_%s%s"%(runTag,scanTag),nDigits=2,err=True, verbose=True,nSpaces=10)
+            JinjaTexTable(yields[cutName],pdfDir=tableDir, caption="" , transpose=True)
+            for sig in signalList:
+                mstop, mlsp = [int(x) for x in sig[1:].rsplit("_")]
+                try: 
+                    limits[mstop]
+                except KeyError:
+                    limits[mstop]={}
+                limits[mstop][mlsp] = getLimit(yields[cutName], sig=sig , outDir=cardDir , postfix= "" ) 
+            pickle.dump(limits, open( limitPkl,'w'))
+        canv , exclplot= limitTools.drawExpectedLimit( limits, plotDir=saveDir+"/ExpectedLimit_%s.png"%( lumiTag ) , bins=None, key=None )
+        canv.SetName("ExpectedLimit_%s_%s_%s.pkl"%(htString,runTag,lumiTag ) )
+        canv.Write()
+        #tfile.Write()
 
-####    #################a Remove below
-
-
-        limit_vals={}
-        for k in limits:
-            mstop, mlsp = [int(x) for x in k[1:].rsplit("_")]
-            if not limit_vals.has_key(mstop):
-                limit_vals[mstop]={}
-            if len(limits[k][1])>2:
-                limit_vals[mstop][mlsp]=limits[k][1]['0.500']
-            else: 
-                limit_vals[mstop][mlsp]=999
-
-        pl = makeStopLSPPlot(runtag, limit_vals, title="Exp. Limit", key=None)
-        pl.Draw("COLZ TEXT")
-        plot = pl
-        plot.SetContour(2 )
-        plot.SetContourLevel(0,0 )
-        plot.SetContourLevel(1,1 )
-        plot.SetContourLevel(2,10 )
-        ROOT.gStyle.SetPaintTextFormat("0.02f")
-        canv = ROOT.TCanvas("excpl","excpl",1920,1080)
-        pl.Draw("COLZ TEXT")
-        canv.SaveAs(saveDir+"/ExclPlot_%s_%s%s.png"%(htString, runtag,scantag))
+tfile.Close()

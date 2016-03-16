@@ -7,7 +7,7 @@ nGenTrk = 'Sum$(( GenTracks_pt>2.5 && abs( GenTracks_eta) <2.5 && GenTracks_CosP
 plotDict =\
       {
         "mt":          {'var':"mt"                             ,"bins":[20,0,300]          ,"nMinus1":None         ,"decor":{"title":"MT"    ,"x":"M_{T}"      ,"y":"Events / 15 GeV "  ,'log':[0,1,0] }},
-        "mtSR":          {'var':"mt"                           ,"bins":[20,0,200]          ,"nMinus1":None         ,"decor":{"title":"MT"    ,"x":"M_{T}"      ,"y":"Events / 10 GeV "  ,'log':[0,1,0] }},
+        "mtSR":          {'var':"mt"                           ,"bins":[30,0,150]          ,"nMinus1":None         ,"decor":{"title":"MT"    ,"x":"M_{T}"      ,"y":"Events / 5 GeV "  ,'log':[0,1,0] }},
         "LepPt":       {'var':"lepPt"                          ,"bins":[40,0,200]          ,"nMinus1":"lepPt"      ,"decor":{"title":"LepPt"    ,"x":"Lepton P_{T}"      ,"y":"Events / 5 GeV "  ,'log':[0,1,0] }},
         "LepPtSR":     {'var':"lepPt"                          ,"bins":[35,0,35]           ,"nMinus1":""           ,"decor":{"title":"LepPt"    ,"x":"Lepton P_{T}"      ,"y":"Events / 1 GeV "  ,'log':[0,1,0] }},
         "met":         {'var':"met"                            ,"bins":[20,200,900]        ,"nMinus1":"met"        ,"decor":{"title":"MET"    ,"x":"E^{miss}_{T}"      ,"y":"Events / 35 GeV "  ,'log':[0,1,0] }},

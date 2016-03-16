@@ -23,19 +23,19 @@ result_dict= {
              }
 
 
-bins8tev_dir  ="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/8TeV/Bins" 
+bins8tev_dir  ="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/8TeV/Bins_v2" 
 import glob
 
 bins8tev_pkls = glob.glob(bins8tev_dir+"/*.pkl")
-bins8tev_savedir = "/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload/expected_limit/8tev/bins/"
+bins8tev_savedir = "/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload/expected_limit/8tev/bins_v2/"
 bins8tev = [
             { "name":limitTools.get_filename(b) , "pkl":b, "savedir":bins8tev_savedir+"/%s.png"%limitTools.get_filename(b) } for b in bins8tev_pkls
            ]
 
 
-bins13tev_dir  = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins"    
+bins13tev_dir  = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins_v2"    
 bins13tev_pkls = glob.glob(bins13tev_dir+"/*.pkl")
-bins13tev_savedir = "/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload/expected_limit/13tev/bins/"
+bins13tev_savedir = "/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload/expected_limit/13tev/bins_v2/"
 bins13tev = [
             { "name":limitTools.get_filename(b) , "pkl":b, "savedir":bins13tev_savedir+"/%s.png"%limitTools.get_filename(b) } for b in bins13tev_pkls
            ]

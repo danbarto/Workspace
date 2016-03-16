@@ -195,8 +195,18 @@ fi
 if $dyjets
 then
     echo -----------------------------  PROCESSING DY --------------------------------
-    python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=DYJetsToLL_M5to50_LO &
+    #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=DYJetsToLL_M5to50_LO &
     python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=DYJetsToNuNu_M50 &
+
+
+    #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=DYJetsToLL_M5to50_HT100to200 &
+    #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=DYJetsToLL_M5to50_HT200to400 &
+    #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=DYJetsToLL_M5to50_HT400to600 &
+    #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=DYJetsToLL_M5to50_HT600toInf &
+
+
+
+
 
     #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=ZJetsToNuNu_HT100to200 &
     #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --processSamples=ZJetsToNuNu_HT200to400 &
@@ -223,8 +233,8 @@ fi
 if $data
 then
 
-    python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=Data_25ns --processSamples=MET_Run2015D_05Oct            &
-    python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=Data_25ns --processSamples=MET_Run2015D_v4               &
+    python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=Data_25ns --processSamples=MET_Run2015D_05Oct           & 
+    python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=Data_25ns --processSamples=MET_Run2015D_v4              & 
     #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=Data_25ns --processSamples=SingleElectron_Run2015D_05Oct &
     #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=Data_25ns --processSamples=SingleElectron_Run2015D_v4    &
     #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=Data_25ns --processSamples=SingleMuon_Run2015D_05Oct     &
@@ -420,8 +430,8 @@ fi
 
 
 
-    python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --skim=lheHTlow    --processSamples=TTJets_LO              &
-    python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --skim=lheHThigh    --processSamples=TTJets_LO_HT600to800   &
+    #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --skim=lheHTlow    --processSamples=TTJets_LO              &
+    #python cmgPostProcessing_v1.py $OVERWRITE --leptonSelection=inc $PRESEL --logLevel=INFO --processingTag=$PROC_TAG --cmgTuples=RunIISpring15DR74_25ns --skim=lheHThigh    --processSamples=TTJets_LO_HT600to800   &
 
 
 #if true

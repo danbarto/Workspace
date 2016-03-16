@@ -30,10 +30,14 @@ class Samples(dict):
     def __init__(self,    **kwargs):
         super(Samples, self).__init__(**kwargs)
         self.__dict__=self
-        dataList= [samp for samp in self.__dict__ if    self[samp].isData ]
+        #dataList= [samp for samp in self.__dict__ if    self[samp].isData ]
+        dataList= self.dataList()
         if len(dataList)>0:
             includes_data= True
             print "--------- Samples include data,", dataList 
+
+            self.addWeightFromDataLumi(dataList)
+
             for d in dataList:
                 if self[d].isSignal:
                     assert False, ("A sample is Signal and Data??!... nice try, but NO! ", d)
@@ -44,7 +48,33 @@ class Samples(dict):
                 for samp in self:
                     if not self[samp].isData:
                         self[samp][weight_name] = "({w})*({dlumi})/({mclumi})".format(w=self[samp].weight, dlumi=data_lumi, mclumi=self[samp].lumi)
-            
+
+    def addWeightFromDataLumi(self, dataList):            
+        for d in dataList:
+            if self[d].isSignal:
+                assert False, ("A sample is Signal and Data??!... nice try, but NO! ", d)
+            data_name = self[d]['name']
+            data_lumi = self[d]['lumi']
+            weight_name = data_name +"_weight"
+            print "--------- %s will be created for MC samples using the data lumi:    %s fb-1 "%(weight_name, data_lumi)
+            for samp in self:
+                if not self[samp].isData:
+                    self[samp][weight_name] = "(({w})*({dlumi})/({mclumi}))".format(w=self[samp].weight, dlumi=data_lumi, mclumi=self[samp].lumi)
+
+
+    def addLumiWeight(self, lumi_target, lumi_base , sampleList=[]):
+        if not sampleList:
+            bkgList = self.bkgList()
+            sigList = self.sigList()
+            sampleList = bkgList + sigList
+        for samp in sampleList:
+            if self[samp].isData: 
+                continue
+            lumi_weight = "(%s/%s)"%(lumi_target, lumi_base)
+            self[samp].Luminosity_weight = lumi_weight 
+            self[samp].lumi = lumi_target
+        self.addWeight(lumi_weight, sampleList)
+
 
     def addWeight(self, weight, sampleList=[]):
         if not sampleList:
@@ -59,18 +89,21 @@ class Samples(dict):
                 new_weight = "(%s *  %s)"%(self[samp]["weight"], weight)
             self[samp]["weight"] = new_weight
     
+        dataList = self.dataList()
+        if dataList:
+            self.addWeightFromDataLumi(dataList)    
 
 
     def bkgList(self):
-        return [samp for samp in self.__dict__.keys() if not self[samp].isSignal and not self[samp].isData ] 
+        return sorted( [samp for samp in self.__dict__.keys() if not self[samp].isSignal and not self[samp].isData ] )
     def sigList(self):
-        return [samp for samp in self.__dict__.keys() if self[samp].isSignal and not self[samp].isData ] 
+        return sorted( [samp for samp in self.__dict__.keys() if self[samp].isSignal and not self[samp].isData ] )
     def privSigList(self):
-        return [samp for samp in self.__dict__.keys() if self[samp].isSignal==2 and not self[samp].isData ] 
+        return sorted( [samp for samp in self.__dict__.keys() if self[samp].isSignal==2 and not self[samp].isData ] )
     def massScanList(self):
-        return [samp for samp in self.__dict__.keys() if self[samp].isSignal==1 and not self[samp].isData ] 
+        return sorted( [samp for samp in self.__dict__.keys() if self[samp].isSignal==1 and not self[samp].isData ] )
     def dataList(self):
-        return [samp for samp in self.__dict__.keys() if not self[samp].isSignal and  self[samp].isData ] 
+        return sorted( [samp for samp in self.__dict__.keys() if not self[samp].isSignal and  self[samp].isData ] )
 
 
  

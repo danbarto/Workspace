@@ -29,26 +29,33 @@ def getMasses(string):
 
 def getValueFromDict(x, val="0.500", default=999):
     try:
-        ret = float(x['0.500'])
+        ret = float(x[1][val])
     except KeyError:
         ret = default
     return ret
 
-def drawExpectedLimit( ldict, save=True ):
-    limit_pickle = ldict["pkl"]
-    savedir = ldict['savedir']
+def drawExpectedLimit( limitDict, plotDir, bins=None, key=None ):
+    saveDir = plotDir
+    
+    if type(limitDict)==type({}):
+        limits = limitDict
+    elif type(limitDict)==type("") and limitDict.endswith(".pkl"):
+        limits = pickle.load(open(limit_pickle, "r"))
+    else:
+        raise Exception("limitDict should either be a dictionary or path to a picke file")
 
-    limits = pickle.load(open(limit_pickle, "r"))
-    bins = [13,87.5,412.5, 75, 17.5, 392.5 ]
-    xyz = []
+    if not bins:
+        bins = [13,87.5,412.5, 75, 17.5, 392.5 ]
     
+    if not key:
+        key = getValueFromDict
     
-    plot = makeStopLSPPlot("Exclusion", limits, bins=bins, key= getValueFromDict )
+    plot = makeStopLSPPlot("Exclusion", limits, bins=bins, key=key )
     
     ROOT.gStyle.SetOptStat(0)
     ROOT.gStyle.SetPaintTextFormat("0.2f")
    
-    #levels = array("d",[0,1,10,1000])
+    #levels = array("d",[0,1,10])
     #nLevels = len(levels)
     #plot.SetContour(nLevels, levels)
  
@@ -57,15 +64,19 @@ def drawExpectedLimit( ldict, save=True ):
     plot.SetContourLevel(1,1 )
     plot.SetContourLevel(2,10 )
     
-    output_name = os.path.splitext(os.path.basename(limit_pickle))[0]+".png"
+    #output_name = os.path.splitext(os.path.basename(limit_pickle))[0]+".png"
     
-    c1 = ROOT.TCanvas("c1","c1",1920,1080)
+    #c1 = ROOT.TCanvas("c1","c1",1910,1070)
+    c1 = ROOT.TCanvas("c1","c1",1900,1000)
     plot.Draw("COL TEXT")
+    c1.Update()
+    c1.Modify()
     #c1.SaveAs("/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload_scan_isrweight/%s"%output_name)
-    if save:
-        c1.SaveAs(savedir)
-
-    return plot
+    if plotDir:
+        c1.SaveAs(plotDir)
+        return c1,plot
+    else:
+        return c1,plot
 
 
 
