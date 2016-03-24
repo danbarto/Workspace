@@ -29,23 +29,41 @@ cardDir="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/
 
 
 
-cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins_v2/"
-cardPattern="T2_4bd*.txt"
-#for card in `ls $cardDirs/$cardPattern`
+#cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/HT/2300pbm1_isrweight_v7_SR2Fixed3rdJetVeto_Bins/"
+cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/HT/2300pbm1_isrweight_v7_SR2Fixed3rdJetVeto/SysBins/"
+cardPattern="T2*4bd*.txt"
 for cardDir in `ls -d $cardDirs/*`
     do 
     cardDirBase=`basename $cardDir`
     ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  &
     done
 
+#for cardDir in `ls -d $cardDirs/ALL`
+#    do 
+#    cardDirBase=`basename $cardDir`
+#    ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  &
+#    done
 
-wait 
-
-cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/8TeV/Bins_v2/"
-cardPattern="T2*.txt"
-#for card in `ls $cardDirs/$cardPattern`
-for cardDir in `ls -d $cardDirs/*`
-    do 
-    cardDirBase=`basename $cardDir`
-    ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  &
-    done
+#wait 
+#
+#
+#cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins_v2/"
+#cardPattern="T2_4bd*.txt"
+##for card in `ls $cardDirs/$cardPattern`
+#for cardDir in `ls -d $cardDirs/*`
+#    do 
+#    cardDirBase=`basename $cardDir`
+#    ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  &
+#    done
+#
+#
+#wait 
+#
+#cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/8TeV/Bins_v2/"
+#cardPattern="T2*.txt"
+##for card in `ls $cardDirs/$cardPattern`
+#for cardDir in `ls -d $cardDirs/*`
+#    do 
+#    cardDirBase=`basename $cardDir`
+#    ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  &
+#    done

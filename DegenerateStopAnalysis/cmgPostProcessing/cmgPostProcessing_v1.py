@@ -254,6 +254,8 @@ def getSamples(args):
     #    import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_7412pass2 as cmgSamples
     elif cmgTuples == "RunIISpring15DR74_25ns":
         import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_7412pass2_mAODv2_v4 as cmgSamples
+    elif cmgTuples == "RunIISpring15DR74_25ns_v5":
+        import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_7412pass2_mAODv2_v5 as cmgSamples
     elif cmgTuples == "RunIISpring15DR74_50ns":
         import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_50ns as cmgSamples
     else:
@@ -506,7 +508,7 @@ def rwTreeClasses(sample, isample, args, temporaryDir, params={} ):
         'ngenTau', 'genTau_*', 
         'ngenLepFromTau', 'genLepFromTau_*', 
         'GenJet_*',
-        'GenTracks_*',
+        #'GenTracks_*',
                           ]
     
     readVariables_MC = []
@@ -542,7 +544,7 @@ def rwTreeClasses(sample, isample, args, temporaryDir, params={} ):
         'nLepGood', 'LepGood_*', 
         'nLepOther', 'LepOther_*', 
         'nTauGood', 'TauGood_*',
-        'Tracks_*', 'isoTrack_*',
+        #'Tracks_*', 'isoTrack_*',
         ] 
     
     readVariables_DATAMC = []
@@ -882,27 +884,27 @@ ptSwitch = 25
 relIso = 0.2
 absIso = 5
 
-muSelector =    lambda readTree,lep,i: \
-                        ( abs(lep.pdgId[i])==13)\
-                        and (lep.pt[i] > 5 )\
-                        and abs(lep.eta[i]) < 2.5\
-                        and abs(lep.dxy[i]) < 0.05\
-                        and abs(lep.dz[i]) < 0.2\
-                        and lep.sip3d[i] < 4\
-                        and lep.mediumMuonId[i] == 1\
-                        and ((lep.pt[i] >= ptSwitch and lep.relIso04[i] < relIso ) or (lep.pt[i] < ptSwitch  and lep.relIso04[i] * lep.pt[i] < absIso ) )
-
-
-muPt30Selector =    lambda readTree,lep,i: \
-                        ( abs(lep.pdgId[i])==13)\
-                        and (lep.pt[i] > 5 )\
-                        and (lep.pt[i] < 30 )\
-                        and abs(lep.eta[i]) < 2.5\
-                        and abs(lep.dxy[i]) < 0.05\
-                        and abs(lep.dz[i]) < 0.2\
-                        and lep.sip3d[i] < 4\
-                        and lep.mediumMuonId[i] == 1\
-                        and ((lep.pt[i] >= ptSwitch and lep.relIso04[i] < relIso ) or (lep.pt[i] < ptSwitch  and lep.relIso04[i] * lep.pt[i] < absIso ) )
+#muSelector =    lambda readTree,lep,i: \
+#                        ( abs(lep.pdgId[i])==13)\
+#                        and (lep.pt[i] > 5 )\
+#                        and abs(lep.eta[i]) < 2.5\
+#                        and abs(lep.dxy[i]) < 0.05\
+#                        and abs(lep.dz[i]) < 0.2\
+#                        and lep.sip3d[i] < 4\
+#                        and lep.mediumMuonId[i] == 1\
+#                        and ((lep.pt[i] >= ptSwitch and lep.relIso04[i] < relIso ) or (lep.pt[i] < ptSwitch  and lep.relIso04[i] * lep.pt[i] < absIso ) )
+#
+#
+#muPt30Selector =    lambda readTree,lep,i: \
+#                        ( abs(lep.pdgId[i])==13)\
+#                        and (lep.pt[i] > 5 )\
+#                        and (lep.pt[i] < 30 )\
+#                        and abs(lep.eta[i]) < 2.5\
+#                        and abs(lep.dxy[i]) < 0.05\
+#                        and abs(lep.dz[i]) < 0.2\
+#                        and lep.sip3d[i] < 4\
+#                        and lep.mediumMuonId[i] == 1\
+#                        and ((lep.pt[i] >= ptSwitch and lep.relIso04[i] < relIso ) or (lep.pt[i] < ptSwitch  and lep.relIso04[i] * lep.pt[i] < absIso ) )
 
 
 
@@ -920,16 +922,16 @@ def processLeptons(leptonSelection, readTree, splitTree, saveTree, params):
     
     lep = None
 
-    LepSel     = params['LepSel']  # use for Sync
+    LepSel     = params['LepSel']  
     LepSelPt30 = params['LepSelPt30']  # use for Sync
     
     lepSelector =  cmgObjectSelection.lepSelectorFunc( LepSel)
-    muSelector2 =  cmgObjectSelection.lepSelectorFunc( {"mu":LepSel['mu'] } )
-    elSelector2 =  cmgObjectSelection.lepSelectorFunc( {"el":LepSel['el'] } )
+    muSelector =  cmgObjectSelection.lepSelectorFunc( {"mu":LepSel['mu'] } )
+    elSelector =  cmgObjectSelection.lepSelectorFunc( {"el":LepSel['el'] } )
 
-    lepSelectorPt30 =  cmgObjectSelection.lepSelectorFunc( LepSelPt30)
-    muSelectorPt302 =  cmgObjectSelection.lepSelectorFunc( {"mu":LepSelPt30['mu'] } )
-    elSelectorPt302 =  cmgObjectSelection.lepSelectorFunc( {"el":LepSelPt30['el'] } )
+    #lepSelectorPt30 =  cmgObjectSelection.lepSelectorFunc( LepSelPt30)
+    #muSelectorPt302 =  cmgObjectSelection.lepSelectorFunc( {"mu":LepSelPt30['mu'] } )
+    #elSelectorPt302 =  cmgObjectSelection.lepSelectorFunc( {"el":LepSelPt30['el'] } )
 
 
     if leptonSelection in ['soft','hard','inc']:
@@ -938,26 +940,31 @@ def processLeptons(leptonSelection, readTree, splitTree, saveTree, params):
         lepObj = cmgObject(readTree, "LepGood")
 
 
-        lepList      =  lepObj.getSelectionIndexList(readTree, muSelector )
-        lepPt30List  =  lepObj.getSelectionIndexList(readTree, muPt30Selector, lepList )
+        #lepList      =  lepObj.getSelectionIndexList(readTree, muSelector )
+        #lepPt30List  =  lepObj.getSelectionIndexList(readTree, muPt30Selector, lepList )
 
-        lepList2     =  lepObj.getSelectionIndexList(readTree, muSelector2 )
+        lepList     =  lepObj.getSelectionIndexList(readTree, muSelector )
 
-        lepPt30List2     =  lepObj.getSelectionIndexList(readTree, muSelectorPt302 )
+        #lepPt30List     =  lepObj.getSelectionIndexList(readTree, muSelectorPt302 )
 
-        if lepList != lepList2:
-            print "  ------------------------------------------------------"
-            print lepList
-            print lepList2
-            assert False
-        if lepPt30List != lepPt30List2:
-            varList = ['pt', 'eta', 'phi', 'miniRelIso','relIso03','relIso04', 'dxy', 'dz', 'pdgId', 'sip3d','mediumMuonId']
-            print " 30 ----i--------------------------------------------------"
-            print lepPt30List
-            print lepPt30List2
-            print [lepObj.pt[i] for i in range(lepObj.nObj)]
-            print [ [i, var,  getattr(lepObj,var)[i] ] for i in range(lepObj.nObj) for var in varList ]
-            assert False
+        #for iLep in lepList:
+        #    if lepObj.sip3d[iLep] > 4:
+        #        print LepSel['mu']
+        #        print iLep, lepObj.sip3d[iLep]
+
+        #if lepList != lepList2:
+        #    print "  ------------------------------------------------------"
+        #    print lepList
+        #    print lepList2
+        #    assert False
+        #if lepPt30List != lepPt30List2:
+        #    varList = ['pt', 'eta', 'phi', 'miniRelIso','relIso03','relIso04', 'dxy', 'dz', 'pdgId', 'sip3d','mediumMuonId']
+        #    print " 30 ----i--------------------------------------------------"
+        #    print lepPt30List
+        #    print lepPt30List2
+        #    print [lepObj.pt[i] for i in range(lepObj.nObj)]
+        #    print [ [i, var,  getattr(lepObj,var)[i] ] for i in range(lepObj.nObj) for var in varList ]
+        #    assert False
 
         
         saveTree.nMuons = len(lepList)
@@ -1688,11 +1695,13 @@ def cmgPostProcessing(argv=None):
             "mu":{
                     "pdgId":13 , 
                     "pt":5     ,
-                    "eta":2.4  ,
-                    "dxy":0.05 ,
-                    "dz":0.2   ,
-                    "sip3d":4  , 
-                    "mediumMuonId": 1 , 
+                    "eta":2.1  ,
+                    "dxy":0.02 ,
+                    "dz":0.5   ,
+                    #"dxy":0.05 ,
+                    #"dz":0.2   ,
+                    #"sip3d":4  , 
+                    #"mediumMuonId": 1 , 
                     "hybIso":{  "ptSwitch": 25, "relIso":0.2 , "absIso":5  }
                  },
             "el":{
@@ -1750,7 +1759,7 @@ def cmgPostProcessing(argv=None):
 
         if len(mass_dict) ==0:
             print "Mass Dict Not Avail. It's needed to split signal scan mass points"
-            assert False, "Mass Dict Not Avail. It's needed to split signal scan mass points"
+            raise Exception("Mass Dict Not Avail. It's needed to split signal scan mass points")
 
         mstop = args.processSignalScan[0]
         mlsp = args.processSignalScan[1]

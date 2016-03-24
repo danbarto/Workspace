@@ -12,9 +12,12 @@ def get_ext (f):
     return os.path.splitext(os.path.basename(f))[1]
 
 def getMasses(string):
+    import re
     masses = []    
     string = get_filename(string)
-    for s in string.rsplit("_"):
+    splitted = re.split("_|-", string)
+    #splitted = string.rsplit("_"):
+    for s in splitted: 
         if s.startswith("s"):
             s = s[1:]
         if not s.isdigit(): continue
@@ -29,23 +32,26 @@ def getMasses(string):
 
 def getValueFromDict(x, val="0.500", default=999):
     try:
-        ret = float(x[1][val])
+        ret = x[val]
     except KeyError:
         ret = default
-    return ret
+    #else:
+    #    raise Exception("cannot find value %s in  %s"%(val, x))
+    return float(ret)
 
-def drawExpectedLimit( limitDict, plotDir, bins=None, key=None ):
+def drawExpectedLimit( limitDict, plotDir, bins=None, key=None , title=""):
     saveDir = plotDir
     
     if type(limitDict)==type({}):
         limits = limitDict
     elif type(limitDict)==type("") and limitDict.endswith(".pkl"):
-        limits = pickle.load(open(limit_pickle, "r"))
+        limits = pickle.load(open(limitDict, "r"))
     else:
         raise Exception("limitDict should either be a dictionary or path to a picke file")
 
     if not bins:
         bins = [13,87.5,412.5, 75, 17.5, 392.5 ]
+        #bins = [23,87.5,662.5, 127 , 17.5, 642.5]
     
     if not key:
         key = getValueFromDict
@@ -54,7 +60,7 @@ def drawExpectedLimit( limitDict, plotDir, bins=None, key=None ):
     
     ROOT.gStyle.SetOptStat(0)
     ROOT.gStyle.SetPaintTextFormat("0.2f")
-   
+
     #levels = array("d",[0,1,10])
     #nLevels = len(levels)
     #plot.SetContour(nLevels, levels)
@@ -67,8 +73,15 @@ def drawExpectedLimit( limitDict, plotDir, bins=None, key=None ):
     #output_name = os.path.splitext(os.path.basename(limit_pickle))[0]+".png"
     
     #c1 = ROOT.TCanvas("c1","c1",1910,1070)
-    c1 = ROOT.TCanvas("c1","c1",1900,1000)
+    c1 = ROOT.TCanvas("c1","c1",1500,1026)
     plot.Draw("COL TEXT")
+    if title:
+        ltitle = ROOT.TLatex()
+        ltitle.SetNDC()
+        ltitle.SetTextAlign(12)   
+        #ytop = 1.05- canv.GetTopMargin()
+        #ltitle_info = [0.1, ytop]
+        ltitle.DrawLatex(0.2, 0.8, title  )
     c1.Update()
     c1.Modify()
     #c1.SaveAs("/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload_scan_isrweight/%s"%output_name)

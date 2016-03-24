@@ -217,14 +217,22 @@ jetSelector = jetSelectorFunc(pt=30, eta=2.4)
 #######################################                    ####################################
 ###############################################################################################
 
-
-def isGoodLepton(lep, ptCut=5, etaCut = 2.4, hybridIso04={"ptSwitch":25,"relIso":0.2,'absIso':5} , dzCut=0.2 , dxyCut=0.05 ,sip3dCut=4.0 ):
+def isGoodLepton(lep, ptCut=5, etaCut = 2.1, hybridIso04={"ptSwitch":25,"relIso":0.2,'absIso':5} , dzCut=0.5 , dxyCut=0.02 ,sip3dCut=999 ):
   if abs(lep['pdgId'])==13:
-    if lep['mediumMuonId']==1 and abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut and lep['sip3d'] < sip3dCut and lep['pt'] > ptCut and abs(lep['eta']) < etaCut and hybridIso04ID(lep):
+    #if  abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut and lep['sip3d'] < sip3dCut and lep['pt'] > ptCut and abs(lep['eta']) < etaCut and hybridIso04ID(lep):
+    if  abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut  and lep['pt'] > ptCut and abs(lep['eta']) < etaCut and hybridIso04ID(lep):
       return True
     else: return False
   elif abs(lep['pdgId'])==11:
     return False
+
+#def isGoodLepton(lep, ptCut=5, etaCut = 2.4, hybridIso04={"ptSwitch":25,"relIso":0.2,'absIso':5} , dzCut=0.2 , dxyCut=0.05 ,sip3dCut=4.0 ):
+#  if abs(lep['pdgId'])==13:
+#    if lep['mediumMuonId']==1 and abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut and lep['sip3d'] < sip3dCut and lep['pt'] > ptCut and abs(lep['eta']) < etaCut and hybridIso04ID(lep):
+#      return True
+#    else: return False
+#  elif abs(lep['pdgId'])==11:
+#    return False
 
 def isGoodLepFunc(ptCut=5, ptMax=999999 ,etaCut = 2.4, hybridIso04={"ptSwitch":25,"relIso":0.2,'absIso':5} , dzCut=0.2 , dxyCut=0.05 ,sip3dCut=4.0):
     def isGoodLepton(lep, ptCut=ptCut, etaCut=etaCut, hybridIso04=hybridIso04, dzCut=dzCut, dxyCut=dxyCut, sip3dCut=sip3dCut ):

@@ -5,6 +5,20 @@ import glob
 
 from limitTools import *
 
+from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import makeDir 
+from Workspace.DegenerateStopAnalysis.navidTools.limitTools import *
+"""
+usage:
+python run_adjustCardSysts.py "pattern/to/cards/withsysts*.txt" "pattern/to/cards/with/rates/*.txt" output/dir/
+example:
+python run_adjustCardSysts.py "../../data/cards/8TeV/Full/T2DegStop_*.txt" "../../data/cards/13TeV/HT/2300pbm1_isrweight_v7_SR2Fixed3rdJetVeto/Full/T2-4bd-*.txt" "../../data/cards/13TeV/HT/2300pbm1_isrweight_v7_SR2Fixed3rdJetVeto/SysFull/"
+
+
+"""
+
+
+
+
 call_script = "adjustCardSysts.py"
 
 
@@ -33,7 +47,7 @@ if not cards_with_rates:
 # outdir
 #
 output_dir = args[2]
-
+makeDir(output_dir)
 
 
 

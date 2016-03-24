@@ -5,12 +5,8 @@ from Workspace.DegenerateStopAnalysis.colors import colors
 #import Workspace.DegenerateStopAnalysis.cmgTuplesPostProcessed_mAODv2_scan as cmgTuplesPostProcessed
 from Workspace.DegenerateStopAnalysis.cmgTuplesPostProcessed_mAODv2 import cmgTuplesPostProcessed
 import Workspace.DegenerateStopAnalysis.weights as weights
+import os
 
-
-mc_path     = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/RunIISpring15DR74_25ns"
-signal_path = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/RunIISpring15DR74_25ns"
-data_path   = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/Data_25ns"
-cmgPP = cmgTuplesPostProcessed(mc_path, signal_path, data_path)
 
 #-------------------------
 
@@ -35,9 +31,17 @@ mass_dict = pickle.load(open(mass_dict_pickle,"r"))
 
 
 def getSamples( wtau  = False, sampleList=['w','tt','z','sig'], 
-                useHT = False, getData = False, blinded=True, scan=True, skim='presel', cmgPP=cmgPP,  
+                useHT = False, getData = False, blinded=True, scan=True, skim='presel', cmgPP=None, do8tev=False, 
                 #lumi_mc=10000, lumi_data_blinded=2245.386, lumi_data_unblinded=139.63):
                 lumi_target=lumis["lumi_target"], lumi_data_blinded=lumis['lumi_data_blinded'], lumi_data_unblinded=lumis['lumi_data_unblinded']):
+
+    if not cmgPP:
+        mc_path     = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/RunIISpring15DR74_25ns"
+        signal_path = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/RunIISpring15DR74_25ns"
+        data_path   = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/Data_25ns"
+        cmgPP = cmgTuplesPostProcessed(mc_path, signal_path, data_path)
+
+
 
     lumi_mc = cmgPP.lumi
 
@@ -63,10 +67,10 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
     if any( [x in sampleList for x in ["s30", "s30FS","s10FS","s60FS" , "t2tt30FS"]] ):
         sampleDict.update({
               "s30":            {'sample': cmgPP.T2DegStop_300_270[skim]                ,'name':'S300_270'        ,'color':colors["s30"     ]             , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc      },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },  "weight":weights.isrWeight(9.5e-5)
-              "s60FS":          {'sample': cmgPP.T2DegStop_300_240_FastSim[skim]        ,'name':'S300_240Fast'      ,'color':colors["s60FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.3520*(%s))"%weights.isrWeight(9.5e-5)   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
-              "s30FS":          {'sample': cmgPP.T2DegStop_300_270_FastSim[skim]        ,'name':'S300_270Fast'      ,'color':colors["s30FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2647*(%s))"%weights.isrWeight(9.5e-5)   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
-              "s10FS":          {'sample': cmgPP.T2DegStop_300_290_FastSim[skim]        ,'name':'S300_290Fast'      ,'color':colors["s10FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2546*(%s))"%weights.isrWeight(9.5e-5)   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
-              "t2tt30FS":       {'sample': cmgPP.T2tt_300_270_FastSim[skim]             ,'name':'T2tt300_270Fast'   ,'color':colors["t2tt30FS"]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2783*(%s))"%weights.isrWeight(9.5e-5)   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
+              "s60FS":          {'sample': cmgPP.T2DegStop_300_240_FastSim[skim]        ,'name':'S300_240Fast'      ,'color':colors["s60FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.3520)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
+              "s30FS":          {'sample': cmgPP.T2DegStop_300_270_FastSim[skim]        ,'name':'S300_270Fast'      ,'color':colors["s30FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2647)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
+              "s10FS":          {'sample': cmgPP.T2DegStop_300_290_FastSim[skim]        ,'name':'S300_290Fast'      ,'color':colors["s10FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2546)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
+              "t2tt30FS":       {'sample': cmgPP.T2tt_300_270_FastSim[skim]             ,'name':'T2tt300_270Fast'   ,'color':colors["t2tt30FS"]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2783)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
                           })
     if "w" in sampleList:
         WJetsSample     = cmgPP.WJetsHT[skim] if useHT else cmgPP.WJetsInc[skim]
@@ -146,7 +150,7 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
         icolor = 1
         #skim = "inc"
         for mstop in mass_dict:
-            #if mstop > 300 : continue
+            if mstop > 350 : continue
             for mlsp in mass_dict[mstop]:
                         #icolor += 1 
                         sampleDict.update({
@@ -156,15 +160,53 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
                                             })
 
 
+    #scan8tev = False
+    if do8tev:
+        import glob
+        sampleDir_8tev = "/data/imikulec/monoJetTuples_v8/copyfiltered/"
+        get8TevSample = lambda mstop, mlsp : sampleDir_8tev  +"/"+"T2DegStop_{mstop}_{mlsp}/histo_T2DegStop_{mstop}_{mlsp}.root".format(mstop=mstop, mlsp=mlsp)
+        icolor = 1
+        #skim = "inc"
+        for mstop in mass_dict:
+            #if mstop > 300 : continue
+            for mlsp in mass_dict[mstop]:
+                        name = "T2Deg8TeV_%s_%s"%(mstop,mlsp)
+                        rootfile = get8TevSample(mstop,mlsp)
+                        if os.path.isfile( rootfile):
+                            sampleDict.update({
+                                 's8tev_%s_%s'%(mstop,mlsp):      {'tree': getChain({'file': rootfile, 'name':name})       ,'name':name         , "weight":"weight" ,'color': icolor         , 'isSignal':3 ,'isData':0    ,"lumi":19700      } ,
+                                               })
 
+
+        bkgDir_8tev = "/data/imikulec/monoJetTuples_v8/copy/"
+         
+        wjetDir = bkgDir_8tev+"/WJetsHT150v2/"
+        wfiles = wjetDir
+        sampleDict.update({
+              #'w':              {'sample':WJetsSample         ,'name':'WJets%s'%htString           ,'color':colors['w']           , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },# ,'sumWeights':WJets[1] ,'xsec':20508.9*3    },
+              'w8tev':              {'tree': getChain({'file': wjetDir+"/*.root", 'name':"wjets"} )       ,'name':'WJets8TeV'           ,'color':colors['w']           , 'isSignal':0 ,'isData':0    ,"lumi":19700      },# ,'sumWeights':WJets[1] ,'xsec':20508.9*3    },
+                            })
     
+        ttjetDir = bkgDir_8tev+"/TTJetsPowHeg/"
+        sampleDict.update({
+              'tt8tev':             {'tree': getChain({'file': ttjetDir+"/*.root", 'name':"ttjets"} )    , 'name':'TTJets8TeV'           ,'color':colors['tt']            , 'isSignal':0 ,'isData':0    ,"lumi":19700      },
+                         })
     sampleDict2 = {}
     for samp in sampleDict:
       sampleDict2[samp]=Sample(**sampleDict[samp])
     samples = Samples(**sampleDict2)
 
-    samples.addLumiWeight( lumi_target = lumi_target, lumi_base = lumi_mc , sampleList=[])         ## scale to the target luminosity
-    samples.addWeight( weights.isrWeight(9.5e-5)  , sampleList=samples.sigList())   ## apply isrWeight to the massScan
+
+    samples.addLumiWeight( lumi_target = lumi_target, lumi_base = None , sampleList=[])         ## scale to the target luminosity
+    samples.addWeight( weights.isrWeight(9.5e-5)  , sampleList=samples.privSigList() + samples.massScanList() )   ## apply isrWeight to the massScan
+
+    if do8tev:
+        weight_8tev = "puWeight*wpts4X*(1.+7.5e-5*Max$(gpM*(gpPdg==1000006)))*(1.*(ptISR<120.)+0.95*(ptISR>=120.&&ptISR<150.)+0.9*(ptISR>=150.&&ptISR<250.)+0.8*(ptISR>=250.))"
+        for samp in samples.otherSigList():
+            samples[samp].weight = weight_8tev
+            #samples[samp].weight = "(1)"
+        #samples.addWeight( weight_8tev  , sampleList=samples.otherSigList()  )
+
 
     return samples
 

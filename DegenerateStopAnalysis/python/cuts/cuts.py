@@ -1,5 +1,5 @@
 import math
-from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import CutClass, joinCutStrings, splitCutInPt
+from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import CutClass, joinCutStrings, splitCutInPt, btw
 
 
 ## --------------------------------------------------------------
@@ -8,7 +8,7 @@ from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import CutClass, joi
 
 less = lambda var,val: "(%s < %s)"%(var,val)
 more = lambda var,val: "(%s > %s)"%(var,val)
-btw = lambda var,minVal,maxVal: "(%s > %s && %s < %s)"%(var, min(minVal,maxVal), var, max(minVal,maxVal))
+#btw = lambda var,minVal,maxVal: "(%s > %s && %s < %s)"%(var, min(minVal,maxVal), var, max(minVal,maxVal))
 minAngle = lambda phi1, phi2 : "TMath::Min( (2*pi) - abs({phi1}-{phi2}) , abs({phi1}-{phi2}) )".format(phi1=phi1,phi2=phi2)  
 
 
@@ -30,24 +30,42 @@ preselOnly1Mu = CutClass ("preselOnly1Mu", [
                             ] ,
                 baseCut=None,
                 ) 
-
 preselNoMuSel = CutClass ("presel", [
                               ["MET200","met>200"],
                               ["ISR110","nJet110>=1" ],
                               ["HT300","htJet30j>300"],
                               ["AntiQCD", " (deltaPhi_j12 < 2.5)" ], # monojet
+                              ["TauElVeto","(Sum$(TauGood_idMVA)==0) && (Sum$(abs(LepGood_pdgId)==11 && LepGood_SPRING15_25ns_v1==1)==0)"],
+                              #["No3rdJet60","nJet60<=2"]
                              ],
                 baseCut=None,
                 )
+
+muval="==1"
 muSel       = CutClass("muSel", [
                             ["presel(noMuSel)","(1)"],
-                            ["oneMuon", 'Sum$(((abs(LepGood_pdgId)==13)))==1'],
-                            ["pt_gt_5", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))))==1'],
-                            ["eta2.4", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5)) ))==1'],
-                            ["dz0.2_dxy0.05", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05)))==1'],
-                            ["sip3d4", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05) && ((LepGood_sip3d < 4))))==1'],
-                            ["hybIso", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05) && ((LepGood_sip3d < 4)) && ((((LepGood_pt >= 25) && (LepGood_relIso04 < 0.2) ) || ( (LepGood_pt < 25) && (( LepGood_pt*LepGood_relIso04 ) < 5))))))==1'],
-                            ["medMuId", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05) && ((LepGood_sip3d < 4)) && ((((LepGood_pt >= 25) && (LepGood_relIso04 < 0.2) ) || ( (LepGood_pt < 25) && (( LepGood_pt*LepGood_relIso04 ) < 5)))) && (LepGood_mediumMuonId==1)))==1'],
+                            ["oneMuon", 'Sum$(((abs(LepGood_pdgId)==13)))%s'%muval],
+                            ["pt_gt_5", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))))%s'%muval],
+                            ["eta2.4", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5)) ))%s'%muval],
+                            ["dz0.2_dxy0.05", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05)))%s'%muval],
+                            #["sip3d4", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05) && ((LepGood_sip3d < 4))))%s'%muval],
+                            #["hybIso", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05) && ((LepGood_sip3d < 4)) && ((((LepGood_pt >= 25) && (LepGood_relIso04 < 0.2) ) || ( (LepGood_pt < 25) && (( LepGood_pt*LepGood_relIso04 ) < 5))))))%s'%muval],
+                            #["medMuId", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05) && ((LepGood_sip3d < 4)) && ((((LepGood_pt >= 25) && (LepGood_relIso04 < 0.2) ) || ( (LepGood_pt < 25) && (( LepGood_pt*LepGood_relIso04 ) < 5)))) && (LepGood_mediumMuonId==1)))%s'%muval],
+                            ["hybIso", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05) && ((((LepGood_pt >= 25) && (LepGood_relIso04 < 0.2) ) || ( (LepGood_pt < 25) && (( LepGood_pt*LepGood_relIso04 ) < 5))))))%s'%muval],
+                            ["medMuId", 'Sum$(((abs(LepGood_pdgId)==13) && ((LepGood_pt > 5))  && (abs(LepGood_eta)<2.4) && (abs(LepGood_dz)<0.2) && (abs(LepGood_dxy)<0.05) && ((((LepGood_pt >= 25) && (LepGood_relIso04 < 0.2) ) || ( (LepGood_pt < 25) && (( LepGood_pt*LepGood_relIso04 ) < 5)))) && (LepGood_mediumMuonId==1)))%s'%muval],
+                            ],
+                    baseCut=preselNoMuSel
+                )
+
+muSelOther       = CutClass("muSelOther", [
+                            ["presel(noMuSel)","(1)"],
+                            ["oneMuon", 'Sum$(((abs(LepOther_pdgId)==13)))%s'%muval],
+                            ["pt_gt_5", 'Sum$(((abs(LepOther_pdgId)==13) && ((LepOther_pt > 5))))%s'%muval],
+                            ["eta2.4", 'Sum$(((abs(LepOther_pdgId)==13) && ((LepOther_pt > 5)) ))%s'%muval],
+                            ["dz0.2_dxy0.05", 'Sum$(((abs(LepOther_pdgId)==13) && ((LepOther_pt > 5))  && (abs(LepOther_eta)<2.4) && (abs(LepOther_dz)<0.2) && (abs(LepOther_dxy)<0.05)))%s'%muval],
+                            ["sip3d4", 'Sum$(((abs(LepOther_pdgId)==13) && ((LepOther_pt > 5))  && (abs(LepOther_eta)<2.4) && (abs(LepOther_dz)<0.2) && (abs(LepOther_dxy)<0.05) && ((LepOther_sip3d < 4))))%s'%muval],
+                            ["hybIso", 'Sum$(((abs(LepOther_pdgId)==13) && ((LepOther_pt > 5))  && (abs(LepOther_eta)<2.4) && (abs(LepOther_dz)<0.2) && (abs(LepOther_dxy)<0.05) && ((LepOther_sip3d < 4)) && ((((LepOther_pt >= 25) && (LepOther_relIso04 < 0.2) ) || ( (LepOther_pt < 25) && (( LepOther_pt*LepOther_relIso04 ) < 5))))))%s'%muval],
+                            ["medMuId", 'Sum$(((abs(LepOther_pdgId)==13) && ((LepOther_pt > 5))  && (abs(LepOther_eta)<2.4) && (abs(LepOther_dz)<0.2) && (abs(LepOther_dxy)<0.05) && ((LepOther_sip3d < 4)) && ((((LepOther_pt >= 25) && (LepOther_relIso04 < 0.2) ) || ( (LepOther_pt < 25) && (( LepOther_pt*LepOther_relIso04 ) < 5)))) && (LepOther_mediumMuonId==1)))%s'%muval],
                             ],
                     baseCut=preselNoMuSel
                 )
@@ -59,10 +77,8 @@ presel = CutClass ("presel", [
                               ["ISR110","nJet110>=1" ],
                               ["HT300","htJet30j>300"],
                               ["AntiQCD", " (deltaPhi_j12 < 2.5)" ], # monojet
-                              #
-                              ["nMuon>=1",    "nlep>=1 "  ], ## Add 2ndMu Veto Here
-                              ["2ndMu20Veto", "(nlep==1 || nlep ==2 && LepGood_pt[looseMuonIndex2] < 20)"],
-                              #["nMuon==1",    "nlep==1 "  ], ## Very Small Difference
+                              ["TauElVeto","(Sum$(TauGood_idMVA)==0) && (Sum$(abs(LepGood_pdgId)==11 && LepGood_SPRING15_25ns_v1==1)==0)"],
+                              ["1Mu-2ndMu20Veto", "(nlep==1 || (nlep ==2 && LepGood_pt[looseMuonIndex2] < 20) )"],
                               ["No3rdJet60","nJet60<=2"]
                              ],
                 baseCut=None,
@@ -78,16 +94,25 @@ preselection = presel.combined
 
 
 sr1   = CutClass ("SR1",    [
-                              ["MuPt30","lepPt<30"],
+                              ["CT300","min(met,htJet30j-100) > 300 "],
                               ["negMuon","lepPdgId==13"],
                               ["MuEta1.5","abs(lepEta)<1.5"],
                               ["BVeto","(nSoftBJetsCSV == 0 && nHardBJetsCSV ==0)"],
-                              ["CT300","min(met,htJet30j-100) > 300 "],
-                              #["HT400","htJet30j>400"],
-                              #["met300","met>300"],
+                              ["MuPt30","lepPt<30"],
                            ] , 
                   baseCut = presel,
                   )
+
+
+sr2      = CutClass ("SR2",   [ 
+                                ["ISR325 Met300","nJet325>0 && met>300"],
+                                ["SoftBJet","(nSoftBJetsCSV>=1) && ( nHardBJetsCSV==0 ) "],
+                                [" MuPt<30","lepPt<30"],
+                              ],
+                  baseCut = presel,
+                  )
+
+
 
 
 mtabc   = CutClass ("MTabc",    [
@@ -143,14 +168,6 @@ sr1abc   = CutClass ("sr1abc",    [
 
 
   
-sr2      = CutClass ("SR2",   [ 
-                                ["ISR325","nJet325>0"],
-                                ["OneOrMoreSoftB","nSoftBJetsCSV>=1"],
-                                ["noHardB","nHardBJetsCSV==0"],
-                                [" MuPt<30","lepPt<30"],
-                              ],
-                  baseCut = presel,
-                  )
 
 
 sr2_ptbin   = CutClass ("SR2_PtBinned",    [
@@ -235,7 +252,7 @@ runI.add(   crtt2        )
 
 
 
-runIflow   =    CutClass( "RunIFlow", [], baseCut = None)
+runIflow   =    CutClass( "ReloadSRCutFlow", [], baseCut = None)
 runIflow.add( presel, 'flow', baseCutString = None)
 runIflow.add( sr1, 'inclFlow', baseCutString = presel.combined)
 runIflow.add( sr2, 'inclFlow', baseCutString = presel.combined)

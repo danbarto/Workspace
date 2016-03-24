@@ -5,6 +5,8 @@ import pickle
 import numpy as np
 import glob
 import jinja2
+import pprint as pp
+
 
 from Workspace.HEPHYPythonTools.helpers import getChain, getPlotFromChain, getYieldFromChain, getChunks
 from Workspace.DegenerateStopAnalysis.navidTools.getRatioPlot import *
@@ -14,6 +16,7 @@ from Workspace.HEPHYPythonTools.u_float import u_float
 
 #execfile('../../../python/navidTools/FOM.py')
 #execfile('../../../python/navidTools/getRatioPlot.py')
+#reload(Workspace.DegenerateStopAnalysis.navidTools.getRatioPlot)
 
 
 cmsbase = os.getenv("CMSSW_BASE")
@@ -26,6 +29,7 @@ ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetPalette(1)
 #ROOT.gStyle.SetCanvasPreferGL(1)
 
+#pp=prettyprint.PrettyPrinter(indent=3, depth=5, width=120)
 
 
 #############################################################################################################
@@ -90,6 +94,40 @@ def matchListToDictKeys(List,Dict):
 
 
 
+def getTerminalSize():
+    """
+    stolen from the consule module
+    http://stackoverflow.com/questions/566746/how-to-get-console-window-width-in-python
+    """
+    import os
+    env = os.environ
+    def ioctl_GWINSZ(fd):
+        try:
+            import fcntl, termios, struct, os
+            cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ,
+        '1234'))
+        except:
+            return
+        return cr
+    cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+    if not cr:
+        try:
+            fd = os.open(os.ctermid(), os.O_RDONLY)
+            cr = ioctl_GWINSZ(fd)
+            os.close(fd)
+        except:
+            pass
+    if not cr:
+        cr = (env.get('LINES', 25), env.get('COLUMNS', 80))
+
+        ### Use get(key[, default]) instead of a try/catch
+        #try:
+        #    cr = (env['LINES'], env['COLUMNS'])
+        #except:
+        #    cr = (25, 80)
+    return int(cr[1]), int(cr[0])
+
+
 
 ############################################################################################################
 
@@ -116,7 +154,9 @@ def get_args(sysargs):
 
 
     parser.add_argument('-s', '--sampleList', nargs='+', 
-                                     default=["s30","wtau","w"], help='Input Samples')
+                                     #default=["s30","w","tt"], help='Input Samples')
+                                     default=[],
+                                     help='Input Samples')
 
     parser.add_argument('-c', '--cutInst',  
                                      default="sr1Loose", help='Instance of CutClass To be Used')
@@ -140,7 +180,7 @@ class ArgParser(argparse.ArgumentParser):
         self.sysargs = self._fix_args( sysargs)
 
         self.add_argument('-s', '--sampleList', nargs='+',
-                                     default=["s30","w"], help='input Samples')
+                                     help='input Samples')
         self.add_argument('-p', '--process', action="store_true",
                                       help='input Samples')
         self.add_argument('-c', '--cutInst',  
@@ -267,6 +307,9 @@ def decorHist(samp,cut,hist,decorDict):
     elif samp.isSignal:
         hist.SetLineWidth(2)
         hist.SetLineColor(samp['color'])
+        hist.SetMarkerStyle(0)
+    if dd.has_key("style") and dd['style']:
+        hist.SetLineStyle( dd['style'] )
         hist.SetMarkerStyle(0)
     elif samp.isData:
         pass
@@ -464,7 +507,11 @@ def getPlot(sample,plot,cut,weight="(weight)", nMinus1="",cutStr="",addOverFlowB
     else:
         print "No Weight is being applied"
         w = "(1)"
-    hist = getPlotFromChain(sample.tree,plot.var,plot.bins,cutString,weight=w, addOverFlowBin=addOverFlowBin)
+    binningIsExplicit= False
+    if not len(plot.bins) in [3,6]:
+        if hasattr(plot, "binningIsExplicit"):
+            binningIsExplicit = plot.binningIsExplicit
+    hist = getPlotFromChain(sample.tree,plot.var,plot.bins,cutString,weight=w, addOverFlowBin=addOverFlowBin, binningIsExplicit=binningIsExplicit)
     #plot.decorHistFunc(p)
     decorHist(sample,cut,hist,plot.decor) 
     plotName=plot.name + "_"+ cut.name
@@ -541,14 +588,15 @@ def makeLegend(samples, hists, sampleList, plot, name="Legend",loc=[0.6,0.6,0.9,
 
 def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, plotLimits=[],logy=0,save=True,
                                             fom=True, normalize=False, 
-                                            denoms=None,noms=None, ratioNorm=False,  fomLimits=[],
-                                            leg=True,unity=True, verbose=False):
+                                            pairList=None,  fomTitles=False, 
+                                            denoms=None,noms=None, ratioNorm=False, fomLimits=[],
+                                            leg=True,unity=True, verbose=False , dOpt="hist"):
     if normalize and fom and fom.lower() != "ratio":
         raise Exception("Using FOM on area  normalized histograms... This can't be right!")
     
     #tfile = ROOT.TFile("test.root","new")
 
-
+    dOpt_ = dOpt
     ret = {}
     canvs={}
     hists   = getSamplePlots(samples,plots,cut,sampleList=sampleList, plotList=plotList)
@@ -563,17 +611,18 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
                 'legs':[]           ,
                 })
     isDataPlot = bool(len(dataList))
-    if isDataPlot:
-        latex = ROOT.TLatex()
-        latex.SetNDC()
-        latex.SetTextSize(0.05)
-        latex.SetTextAlign(11)
-        ret['latex']=latex
+
+    latex = ROOT.TLatex()
+    latex.SetNDC()
+    latex.SetTextSize(0.05)
+    latex.SetTextAlign(11)
+    ret['latex']=latex
 
 
     if len(dataList) > 1:
         raise Exception("More than one Data Set in the sampleList... This could be dangerous. %"%dataList)       
     for p in plots.iterkeys():
+        dOpt = dOpt_ 
         if plotList and p not in plotList:
             continue
         if plots[p]['is2d']:
@@ -581,10 +630,13 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
             continue
         if fom:
             denoms = denoms if type(denoms)==type([]) else [denoms]
-            if not denoms or len(denoms)==1:
+            if pairList:
+                padRatios=[2]+ [1]*(len(pairList))   
+            elif not denoms or len(denoms)==1:
                 padRatios=[2,1]
             else:
                 padRatios=[2]+[1]*(len(denoms))
+            print "            padRatios:  ", padRatios
 
             canvs[p]=makeCanvasMultiPads(c1Name="%s_%s"%(cut.name,p),c1ww=800,c1wh=800, joinPads=True, padRatios=padRatios, pads=[])
             cSave , cMain=0,1   # index of the main canvas and the canvas to be saved
@@ -592,7 +644,7 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
             canvs[p] = ROOT.TCanvas(p,p,800,800), None, None
             cSave , cMain=0,0
         canvs[p][cMain].cd()
-        dOpt="hist"
+        #dOpt="hist"
         if normalize: 
             #stacks['bkg'][p].SetFillStyle(3001)
             #stacks['bkg'][p].SetFillColorAlpha(kBlue, 0.35)
@@ -626,8 +678,11 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
         refStack.SetMaximum( refStack.GetMaximum() * 30 )
 
         if leg:    #MAKE A LEGEND FUNCTION
-            bkgLeg = makeLegend(samples, hists, bkgList, p, loc= [0.75,0.67 ,0.9 ,0.87 ] , name="Legend_bkgs_%s_%s"%(cut.name, p), legOpt="f" )
-            sigLeg = makeLegend(samples, hists, sigList, p, loc= [0.5 ,0.67,0.75,0.87] , name="Legend_sigs_%s_%s"%(cut.name, p), legOpt="l" )
+            sigLegList = [samp for samp in sampleList if samp in samples.massScanList() + samples.privSigList()]
+            bkgLegList = [samp for samp in sampleList if samp in samples.bkgList() + samples.otherSigList() ]
+
+            bkgLeg = makeLegend(samples, hists, bkgLegList, p, loc= [0.75,0.67 ,0.9 ,0.87 ] , name="Legend_bkgs_%s_%s"%(cut.name, p), legOpt="f" )
+            sigLeg = makeLegend(samples, hists, sigLegList, p, loc= [0.5 ,0.67,0.75,0.87] , name="Legend_sigs_%s_%s"%(cut.name, p), legOpt="l" )
 
             bkgLeg.Draw()
             sigLeg.Draw()
@@ -645,9 +700,17 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
             #leg.Draw("same")
 
         if fom:
-            getFOMPlotFromStacks( ret, p, sampleList ,fom=fom, normalize=normalize,
+            if pairList:
+                getFOMPlotFromStacksPair( ret, p, sampleList ,fom=fom, normalize=normalize,
+                                              denoms=denoms,noms=noms, ratioNorm=ratioNorm, fomLimits=fomLimits,pairList=pairList, fomTitles=fomTitles,
+                                              leg=leg,unity=unity, verbose=verbose  )
+            else:
+                getFOMPlotFromStacks( ret, p, sampleList ,fom=fom, normalize=normalize,
                                               denoms=denoms,noms=noms, ratioNorm=ratioNorm, fomLimits=fomLimits,
                                               leg=leg,unity=unity, verbose=verbose  )
+
+        for c in canvs[p]:
+            c.RedrawAxis()
         canvs[p][cMain].RedrawAxis()
         canvs[p][cMain].Update()
         canvs[p][cMain].cd()
@@ -681,18 +744,13 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
         canvs = ret['canvs']
         fomHists = ret['fomHists']
         sigList, bkgList, dataList = ret['sigBkgDataList']
-    
-
         fomFunc = fom if type(fom)==type('') else "AMSSYS"
         fomIntegral = False if fomFunc =="RATIO" else True
         fomMax = 0
         fomMin = 999
         fomHists[plot]={}
-        #ret.update({'fomHist':fomHists})
         if "ratio" in fomFunc.lower():
             pass
-        #denom = denom if type(denom)==type([]) else [denom]
-    
         print "isdataplot:",  [ x in dataList for x in noms ]
         if any( [ x in dataList for x in noms ]):       
             isDataPlot=True
@@ -700,14 +758,11 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
         else: 
             isDataPlot = False
             fomPlotTitle = fomFunc
-            
-
         for idenom, denom in enumerate(denoms,2):
             canvs[plot][idenom].cd()
             fomHists[plot][denom]={}  
             ## Getting the total BKG hist
             if bkgList:
-                #hists['bkg'][plot]=stacks['bkg'][plot].GetHists()[0].Clone( "stack_%s"%plot)
                 hists['bkg'][plot]=stacks['bkg'][plot].GetHists()[0].Clone()
                 hists['bkg'][plot].Reset()
                 stack_name = "stack_%s"%stacks['bkg'][plot].GetHists()[0].GetName()
@@ -719,13 +774,11 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
                 if not isDataPlot: fomPlotTitle += " (%s)"%denom
             else:
                 fomHists[plot][denom]['denom']=hists[plot]['bkg'] if bkgList else False
-
-            #refStack.SetMaximum(getHistMax(fomHists[plot][denom]['denom'])[1]*1.3)
             nBins  = fomHists[plot][denom]['denom'].GetNbinsX()
             lowBin = fomHists[plot][denom]['denom'].GetBinLowEdge(1)
             hiBin  = fomHists[plot][denom]['denom'].GetBinLowEdge(fomHists[plot][denom]['denom'].GetNbinsX()+1)
-
             #dOpt="" if not isDataPlot else "E1P"
+
             dOpt="" if not isDataPlot else "E0P"
 
             if not noms:
@@ -737,12 +790,6 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
                 #sigHist= samples[sig]['cuts'][cut.name][plot]
                 sigHist= hists[nom][plot]
                 fomHists[plot][denom][nom] = getFOMFromTH1FIntegral(sigHist, fomHists[plot][denom]['denom'] ,fom=fomFunc, verbose =False, integral = fomIntegral)
-                #print "---------------------------------------------------"
-                #sigHist.Print("all")
-                #fomHists[plot][denom]['denom'].Print("all")
-                #fomHists[plot][denom][nom].Print("all")
-
-                #print "---------------------------------------------------"
                 if ratioNorm:
                     fomHists[plot][denom][nom].Scale(1./fomHists[plot][denom][nom].Integral() ) 
                 fomHists[plot][denom][nom].SetLineWidth(2)
@@ -783,6 +830,115 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
         #for canv in canvs[plot]:
         #    canv.cd()
         return ret
+
+
+
+
+def getFOMPlotFromStacksPair( ret, plot, sampleList ,fom=True, normalize=False, 
+                          denoms=None,noms=None, 
+                          pairList = False, 
+                          ratioNorm=False , fomLimits=[0.8,2], fomTitles=False,
+                          unity=True, verbose=False , leg=True):
+        """
+            pairList [  
+                        [ [samp1, samp2] , [samp3, samp4] ]    , 
+                        [ [samp4,samp5] , [samp5,samp6]   ]    , ....
+                     ]
+            should produce two ratio pads with
+            pad1 : samp1/samp2 and samp3/samp4
+            pad2 : ....
+
+        """
+        hists = ret['hists']
+        hists['bkg']={} 
+        stacks = ret['stacks']
+        canvs = ret['canvs']
+        fomHists = ret['fomHists']
+        sigList, bkgList, dataList = ret['sigBkgDataList']
+        fomFunc = fom if type(fom)==type('') else "AMSSYS"
+        fomIntegral = False if fomFunc =="RATIO" else True
+        fomMax = 0
+        fomMin = 999
+        fomHists[plot]={}
+        if "ratio" in fomFunc.lower():
+            pass
+        for ipad, pairs in enumerate(pairList,2):
+            canvs[ plot ][ ipad ].cd()                
+
+            if any( [x in dataList for x in pairs ] ):
+                isDataPlot=True
+                fomPlotTitle = "DATA/MC     " if "bkg" in denoms else "BAAAAAAAAAAAAAA"
+            else: 
+                isDataPlot = False
+                fomPlotTitle = fomFunc if not fomTitles else fomTitles[ipad-2]
+            if fomTitles:
+                fomPlotTitle=fomTitles[ipad-2]
+            dOpt="" if not isDataPlot else "E0P"
+            for pair in pairs:
+                pair = tuple(pair)
+                print "   pairs:   ",ipad, pair, dOpt
+                nom, denom = pair
+
+                fomHists[plot][pair]={}
+                denomHist = hists[denom][plot]
+                nomHist= hists[nom][plot]
+                #if not isDataPlot: fomPlotTitle += " (%s)"%denom
+
+                nBins  = denomHist.GetNbinsX()
+                lowBin = denomHist.GetBinLowEdge(1)
+                hiBin  = denomHist.GetBinLowEdge(denomHist.GetNbinsX()+1)
+                #dOpt="" if not isDataPlot else "E1P"
+
+                #fomHists[plot][denom][nom] = getFOMFromTH1FIntegral(nomHist, denomHist ,fom=fomFunc, verbose =False, integral = fomIntegral)
+                fomHists[plot][pair] = getFOMFromTH1FIntegral(nomHist, denomHist ,fom=fomFunc, verbose =False, integral = fomIntegral)
+                if ratioNorm:
+                    fomHists[plot][pair].Scale(1./fomHists[plot][pair].Integral() ) 
+
+                fomHists[plot][pair].SetLineWidth(2)
+                fomHists[plot][pair].Draw(dOpt)
+
+                fomMax = max(getHistMax(fomHists[plot][pair])[1] ,fomMax)
+                newMin = getHistMin(fomHists[plot][pair],onlyPos=True)[1]
+                fomMin = min( newMin ,fomMin)
+
+                if dOpt!="same":
+                    #print p, nom , fomHists[plot][denom][nom].GetYaxis().GetTitleSize()
+                    first_nom = nom
+                    decorAxis( fomHists[plot][pair], 'x', tSize=0.1   ,  lSize=0.1)
+                    #decorAxis( fomHists[plot][pair], 'y', t='%s  '%fomPlotTitle   , tOffset=0.5 ,  tSize=1./len(fomPlotTitle), lSize=0.1, func= lambda axis: axis.SetNdivisions(506) )
+                    decorAxis( fomHists[plot][pair], 'y', t='%s  '%fomPlotTitle   , tOffset=0.8 ,  tSize=0.07, lSize=0.1, func= lambda axis: axis.SetNdivisions(506) )
+                    fomHists[plot][pair].SetTitle("")
+                    dOpt="same"
+                if unity:
+                    Func = ROOT.TF1('unity_%s'%plot,"[0]",lowBin,hiBin)
+                    Func.SetParameter(0,1)
+                    #Func.SetLineStyle(3)
+                    Func.SetLineColor(1)
+                    Func.SetLineWidth(1)
+                    Func.Draw("same")
+                    fomHists[plot].update({'unity_func':Func})
+                print 'fom min max', fomMin, fomMax
+                print "first fom hist", first_nom
+                #print fomHists[plot]
+                if fomLimits:
+                    fomHists[plot][pair].SetMinimum(fomLimits[0] )
+                    fomHists[plot][pair].SetMaximum(fomLimits[1] )
+                else:
+                    fomHists[plot][pair].SetMaximum(fomMax*(1.2) )
+                    fomHists[plot][pair].SetMinimum(fomMin*(0.8) )
+            fomHists[plot][pair].Draw("same")
+            print "idenom", ipad
+            canvs[plot][ipad].RedrawAxis()
+            canvs[plot][ipad].Update()
+        return ret
+
+
+
+
+
+
+
+
 
 
 fomDefaultSet =   { 
@@ -864,7 +1020,7 @@ def draw2DPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],min=False,log
             if save:
                 saveDir = save + "/%s/"%cut.saveDir if type(save)==type('') else "./"
                 if not os.path.isdir(saveDir): os.mkdir(saveDir) 
-                canvs[plotName].SaveAs(saveDir+"/%s.png"%plotTitle)
+                canvs[plotName].SaveAs(saveDir+"/%s.png"%plotTitle.replace("#",""))
     return ret
 
 
@@ -884,12 +1040,13 @@ def getAndDrawQuickPlots(samples,var,bins=[],varName='',cut="(1)",weight="weight
     ####### Getting Plots
     ret['hists']={}
     ret.update({'canv':canv })
-    bkgList = [samp for samp in samples if samp in sampleList and not samples[samp].isSignal and not samples[samp].isData]
-    sigList = [samp for samp in samples if samp in sampleList and samples[samp].isSignal and not samples[samp].isData]
 
-    if not sigList or bkgList:
-        raise Exception("No Signal or Background... what to draw? sampleList = %s"%sampleList)
+    bkgList = [ samp for samp in sampleList if samp in samples.bkgList()]
+    sigList = [ samp for samp in sampleList if samp in samples.sigList()]
+
     print bkgList, sigList
+    if not (sigList or bkgList):
+        raise Exception("No Signal or Background... what to draw? sampleList = %s"%sampleList)
 
     if leg:
         leg = ROOT.TLegend(0.6,0.7,0.9,0.9)
@@ -1079,15 +1236,27 @@ class Plots(dict):
 
 
 
-less = lambda var,val: "(%s < %s)"%(var,val)
-more = lambda var,val: "(%s > %s)"%(var,val)
-btw = lambda var,minVal,maxVal: "(%s > %s && %s < %s)"%(var, min(minVal,maxVal), var, max(minVal,maxVal))
+#less = lambda var,val: "(%s < %s)"%(var,val)
+#more = lambda var,val: "(%s > %s)"%(var,val)
+#btw = lambda var,minVal,maxVal: "(%s > %s && %s < %s)"%(var, min(minVal,maxVal), var, max(minVal,maxVal))
 
 deltaPhiStr = lambda x,y : "abs( atan2(sin({x}-{y}), cos({x}-{y}) ) )".format(x=x,y=y)
 
 deltaRStr = lambda eta1,eta2,phi1,phi2: "sqrt( ({eta1}-{eta2})**2 - ({dphi})**2  )".format(eta1=eta1,eta2=eta2, dphi=deltaPhiStr(phi1,phi2) ) 
 
-def btw(var,minVal,maxVal, rangeLimit=[0,0] ):
+
+def more(var,val, eq= True):
+    op = ">"
+    if eq: op = op +"="
+    return "%s %s %s"%(var, op, val)
+
+
+def less(var,val, eq= False):
+    op = "<"
+    if eq: op = op +"="
+    return "%s %s %s"%(var, op, val)
+
+def btw(var,minVal,maxVal, rangeLimit=[0,1] ):
     greaterOpp = ">"
     lessOpp = "<"
     vals = [minVal, maxVal]
@@ -1153,9 +1322,11 @@ class CutClass():
         else:
             self.list         =[[self.baseCutName, self.baseCutString]]+  [ [cutName,"(%s)"%"&&".join([self.baseCutString,cut])  ] for cutName,cut in self.inclList ]
         self.list2        = self.list[1:]
+        self.flow2         = self._makeFlow(self.inclList,self.baseCutString)
         if baseCut:
-            self.flow2        = self._makeFlow([[self.baseCutName, self.baseCutString]]+self.inclList)
-        self.flow         = self._makeFlow(self.inclList,self.baseCutString)
+            self.flow        = self._makeFlow([[self.baseCutName, self.baseCutString]]+self.inclList)
+        else:
+            self.flow = self.flow2
         self.combined     = self._combine(self.inclList,self.baseCutString)
         self.combinedList = [[self.name, self.combined]]
     def _makeDict(self,cutList):
@@ -1223,7 +1394,37 @@ def addBaseCutString(cutList, baseCutString ):
 ##########################################                    ###############################################
 #############################################################################################################
 
-
+#def decide_weight( sample, weight, cutInst=None, weightDict = None):
+#    """
+#    chooses the weight for the sample.
+#    if an instance of CutClass is given as cutInst, the weightDict is also required.
+#    in this case, the weight is chosen from the weightDict, based the sample, cutInst, and the origianl weight string.
+#    otherwise, the weight is chosen based on weight keys in the sample
+#
+#    """
+#
+#    if sample.isData:
+#        weight_str = "(1)"
+#        return weight_str
+#    if "weight" in weight.lower():
+#        if sample.has_key("weight"):
+#            weight_str = sample['weight']
+#        if weight.endswith("_weight"):
+#            if sample.has_key(weight):
+#                weight_str = sample[weight]
+#                #print sample, weight_str, samples[sample]
+#    else:
+#        weight_str=weight
+#    if not cutInst:
+#        return weight_str
+#    elif weightDict:
+#        sample_name =  sample['name']
+#        if weightDict.has_key(sample_name):
+#            if weightDict[sample_name]
+#        extra_weight = 
+#    else:
+#        raise Exception("When an instance of CutClass is given, a weight Dictionary is also required.")
+#
 
 def decide_weight( sample, weight):
     if sample.isData:
@@ -1246,7 +1447,7 @@ class Yields():
         Usage:
         y=Yields(samples,['tt', 'w','s'],cuts.presel,tableName='{cut}_test',pklOpt=1);
     '''
-    def __init__(self,samples,sampleList,cutInst,cutOpt='flow',tableName='{cut}',weight="(weight)",pklOpt=False,pklDir="./pkl/",nDigits=2, err=True, verbose=False, nSpaces=17):
+    def __init__(self,samples,sampleList,cutInst,cutOpt='flow',tableName='{cut}',weight="(weight)",pklOpt=False,pklDir="./pkl/",nDigits=2, err=True, verbose=False, nSpaces=None):
         if not (isinstance(cutInst,CutClass) or hasattr(cutInst,cutOpt)):
             raise Exception("use an instance of cutClass")
         self.nDigits        = nDigits
@@ -1254,11 +1455,13 @@ class Yields():
         self.cutInst        = cutInst
         self.weight         = weight
         self.tableName    = tableName.format(cut=self.cutInst.name)
-        self.sampleList     = sampleList
+        self.sampleList     = [s for s in sampleList]
         self.sampleList.sort(key = lambda x: samples[x]['isSignal'])
         self.npsize="|S20"
         self.err = err
-        self.nSpaces =  nSpaces 
+
+
+        self.fomNames={}
 
         self.updateSampleLists(samples,self.sampleList)
 
@@ -1266,11 +1469,21 @@ class Yields():
         self.cutLegend =     np.array( [[""]+[cut[0] for cut in self.cutList]])
         self.cutNames        = list( self.cutLegend[0][1:] )
 
+
+        if not nSpaces:
+            terminal_size = getTerminalSize()
+            nSpaces = (terminal_size[0] -  10 - len(self.cutLegend[0]) )/len(self.cutLegend[0])
+        self.nSpaces =  nSpaces 
+
+
         self.yieldDictRaw = { sample:[ ] for sample in sampleList}
         self.yieldDictFull = { sample:{} for sample in sampleList}
         self.pklOpt = pklOpt
         self.pklDir = pklDir +"/"
         self.verbose = verbose
+        if self.verbose:
+           print "Weights:"
+           pp.pprint(self.weights)
 
         self.getYieldDictFull( samples, self.cutList )
 
@@ -1284,10 +1497,18 @@ class Yields():
         self.dataList       = [samp for samp in   samples.dataList()  if samp in sampleList]
         self.sampleNames    = { samp:fixForLatex(samples[samp]['name']) for samp in sampleList}
 
+
+        self.LatexTitles    = {}
+        self.LatexTitles.update({ samp:self.sampleNames[samp] for samp in self.sampleNames})
+        self.LatexTitles.update({ fomName:self.fomNames[fomName] for fomName in self.fomNames }) 
+        self.LatexTitles.update({ "Total":"Total" })
+
+
         #self.sampleLegend   = np.array( [ [samples[sample]['name'] for sample in self.bkgList] + ["Total"] + 
         #                                                         [samples[sample]['name'] for sample in self.sigList] ] )
 
         self.weights        = { samp:decide_weight(samples[samp] , self.weight    ) for samp in self.sampleList }
+            
 
         if hasattr(self,"LatexTitles"):
             #self.sampleLegend   =   [self.LatexTitles[sample] for sample in self.bkgList] +\
@@ -1296,8 +1517,9 @@ class Yields():
             #                        [self.LatexTitles[sample] for sample in getattr(self,"fomList",[]) ]
             self.sampleLegend   =   [self.LatexTitles[sample] for sample in self.bkgList] +\
                                     ["Total"]
-            for sample in self.sigList:
-                self.sampleLegend.extend( [self.LatexTitles[sample], self.LatexTitles["FOM_%s"%sample] ] ) 
+            if self.fomNames:
+                for sample in self.sigList:
+                    self.sampleLegend.extend( [self.LatexTitles[sample], self.LatexTitles["FOM_%s"%sample] ] ) 
                                     #[self.LatexTitles[sample] for sample in getattr(self,"fomList",[]) ]
                                    
 
@@ -1349,20 +1571,17 @@ class Yields():
         if not yieldDict: yieldDict = self.yieldDictFull
         return { bin: { samp:yieldDict[samp][bin] for samp in yieldDict.keys() } for bin in self.cutNames}  
 
-    #def round(val, nDigits):
-    #    if hasattr(val,"round"):
-    #        return val.round(nDigits)
-    #    else:
-    #        return round(val, nDigits)
+    def round(self, val, nDigits):
+        try: 
+            return val.round(nDigits)
+        except AttributeError:
+            return round(val, nDigits)
 
     def getBkgTotal(self, yieldDict):
         yieldDictTotal={}
         for cut in self.cutNames:
-            #yieldDictTotal[cut] =   sum( [ yieldDict[samp][cut] for samp in self.bkgList  ] ).round(self.nDigits ) 
             summed = sum( [ yieldDict[samp][cut] for samp in self.bkgList  ] )
-            #print [ yieldDict[samp][cut] for samp in self.bkgList  ]
-            #print summed
-            yieldDictTotal[cut] =   summed.round( self.nDigits ) 
+            yieldDictTotal[cut] =   self.round( summed ,self.nDigits ) 
         #return {'Total':yieldDictTotal}
         return yieldDictTotal
 
@@ -1441,10 +1660,6 @@ class Yields():
         self.FOMTable       =   self.makeNumpyFromDict(self.yieldDict)
         self.table          =   self.makeNumpyFromDict(self.yieldDictFull)
 
-        self.LatexTitles    = {}
-        self.LatexTitles.update({ samp:self.sampleNames[samp] for samp in self.sampleNames})
-        self.LatexTitles.update({ fomName:self.fomNames[fomName] for fomName in self.fomNames }) 
-        self.LatexTitles.update({ "Total":"Total" })
 
         self.updateSampleLists(samples,self.sampleList)
         return yieldDictFull
@@ -1508,14 +1723,15 @@ class Yields():
         print ret
         return ret
 
-    def pprint(self, table=None, nSpaces=17, align="<"):
+    def pprint(self, table=None, nSpaces=17, align="<", ret=None):
         if table is None:
             table = self.FOMTable.T
         block = "| {:%s%s}"%(align,nSpaces)
         #ret = [( block*len(line) ).format(*map(lambda x: "%s"%x,line)) for line in a.T]
         ret = [( block*len(line) ).format(*line) for line in table]
         print ret
-        return ret
+        if ret:
+            return ret
 
 
 
@@ -1559,7 +1775,7 @@ import os
 templateDir = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/python/navidTools/LaTexJinjaTemplates/"
 
 class JinjaTexTable():
-    def __init__(self,yieldInstance, texDir="./tex/", pdfDir=pdfDir, outputName="",\
+    def __init__(self,yieldInstance, yieldOpt=None, texDir="./tex/", pdfDir=pdfDir, outputName="",\
                  searchpath=templateDir, template_file= "", removeJunk=True, tableNum=1, caption="", title="", transpose=False):
         if not template_file:
             template_file = "LaTexTemplateWithFOM_v2.j2.tex"
@@ -1622,9 +1838,16 @@ class JinjaTexTable():
                            # "TAB"       :self.tableNum, 
                            #  "CAPTION"  :self.caption,
 
+        if not yieldOpt:
+            yieldDict = ylds.getNiceYieldDict()
+        elif hasattr(yieldOpt,"__call__") :
+            yieldDict = yieldOpt(ylds)
+        else:
+            yieldDict = getattr(ylds, yieldOpt)
+
         if transpose:
             self.info.update( {
-                             "yieldDict"      :     ylds.getNiceYieldDict()  ,
+                             "yieldDict"      :     yieldDict,  
                              "rowList"        :     ylds.sampleLegend,
                              "colList"        :     ylds.cutNames ,
                              "title"          :     self.title,
@@ -1632,7 +1855,7 @@ class JinjaTexTable():
                                 })
         else:
             self.info.update( {
-                             "yieldDict"      :     ylds.getByBins( ylds.getNiceYieldDict() ) ,
+                             "yieldDict"      :     ylds.getByBins( yieldDict ) ,
                              "rowList"        :     ylds.cutNames ,
                              "colList"        :     ylds.sampleLegend,
                              "title"          :     self.title,

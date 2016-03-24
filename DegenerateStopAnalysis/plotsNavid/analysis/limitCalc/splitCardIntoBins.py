@@ -77,6 +77,8 @@ srBins = [
           'SRV2' ,
         ]
 
+allBins = crBins + srBins
+
 srBinsToUse = {
           'SRL1a':['SRL1a'  , "CR1a"],
           'SRH1a':['SRH1a'  , "CR1a"],
@@ -90,22 +92,21 @@ srBinsToUse = {
           'SRL2' :['SRL2'   , "CR2", "CRTT2"],
           'SRH2' :['SRH2'   , "CR2", "CRTT2"],
           'SRV2' :['SRV2'   , "CR2", "CRTT2"],
-
           "SRSL1a": ['SRL1a', 'SRH1a', 'SRV1a'] + ["CR1a"],
           "SRSL1b": ['SRL1b', 'SRH1b', 'SRV1b'] + ["CR1b"],
           "SRSL1c": ['SRL1c', 'SRH1c', 'SRV1c'] + ["CR1c"] ,
           "SRSL2" : ['SRL2', 'SRH2', 'SRV2']    + ["CR2", "CRTT2"],
           "SRSL1" : ['SRL1a', 'SRH1a', 'SRV1a', 'SRL1b', 'SRH1b', 'SRV1b' , 'SRL1c', 'SRH1c', 'SRV1c'  ] +[ "CR1a", "CR1b", "CR1c" ] ,
-
           "ALL"   : srBins + crBins
-    
         }
 
 
 for srBin in srBinsToUse:
 
-    bins = [x for x in dc.bins if x in srBinsToUse[srBin] or "CR" in x] 
-    ignorebins = [x for x in srBins if not x in srBinsToUse[srBin] ]
+    #bins = [x for x in dc.bins if x in srBinsToUse[srBin] or "CR" in x] 
+    #ignorebins = [x for x in srBins if not x in srBinsToUse[srBin] ]
+    bins = srBinsToUse[srBin]
+    ignorebins = [x for x in allBins if not x in srBinsToUse[srBin] ]
 
 
     print "----------------------------------------------------"
@@ -143,8 +144,8 @@ for srBin in srBinsToUse:
     for s in dc.systs:
         sname = s[0]
         stype = s[2]
-        #if any( x[0:4] in sname for x in ignorebins  ):
-        #    continue
+        if any( x in sname for x in ignorebins  ):
+            continue
         if stype=="gmN":
             print "       ", "add gmn", sname, stype, s[3][0]
             cfw.addUncertainty(sname,stype,s[3][0])

@@ -1,6 +1,6 @@
 
 import sys,os
-
+import pprint as pp
 #oldargv = sys.argv[ : ]
 #sys.argv = [ '-b-' ]
 #import ROOT
@@ -8,6 +8,9 @@ import sys,os
 #sys.argv = oldargv
 
 from Workspace.DegenerateStopAnalysis.cuts.cuts import *
+import Workspace.DegenerateStopAnalysis.cuts.cuts as cuts  ## for copy purpose
+import shutil
+
 from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import *
 
 #from Workspace.DegenerateStopAnalysis.navidTools.makeTable import *
@@ -24,12 +27,28 @@ from Workspace.DegenerateStopAnalysis.navidTools.getSamples_PP_mAODv2_7412pass2_
 import plots
 
 
+#runTag = "isrweight_v5_FixedCuts"
+#runTag = "isrweight_v6_No3rdJetPtVeto"
+#runTag = "isrweight_v7_SR2Fixed3rdJetVeto"
+runTag = "isrweight_v8_LepSelFix"
 
 
+ppTag="7412pass2_SMSScan_v3"
+ppTag="7412pass2_SMSScan_v5"
 
-mc_path     = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/RunIISpring15DR74_25ns"
-signal_path = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/RunIISpring15DR74_25ns"
-data_path   = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/7412pass2_SMSScan_v3/Data_25ns"
+dos = {
+        "dataplots":    True,
+        "calclimit":    True,
+        "yields":       True,
+
+       }
+
+
+mc_path     = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/%s/RunIISpring15DR74_25ns"%ppTag
+signal_path = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/%s/RunIISpring15DR74_25ns"%ppTag
+data_path   = "/afs/hephy.at/data/nrad01/cmgTuples/postProcessed_mAODv2/%s/Data_25ns"%ppTag
+
+
 
 lumis = {
             #'lumi_mc':10000, 
@@ -47,13 +66,16 @@ lumiTag = lumi_tag(lumis['lumi_target'])
 print sys.argv
 parser = ArgParser()
 args=parser.parse(sys.argv)
-sampleList= args.sampleList
+
+if args.sampleList:
+    sampleList= args.sampleList
+else:
+    sampleList = ['tt','w','s30','qcd','z']
 
 #cutInstStr = args.cutInst
 process = args.process
 useHT   = args.useHT
 
-runTag = "isrweight_v5_FixedCuts"
 
 doscan = True
 
@@ -65,12 +87,14 @@ htString = "HT" if useHT else "Inc"
 
 fullTag = "%s_%s_%s"%( runTag , lumiTag , htString )
 
-saveDir = '/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/%s/%s'%(runTag,htString)
+saveDirBase = '/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/'
+saveDir = saveDirBase+'/%s/%s'%(runTag,htString)
 plotDir = saveDir +"/DataPlots/" 
+makeDir(plotDir)
 
 #sampleList         = [ 's30'   , 's10FS' , 's40FS'  ,'s30FS', 't2tt30FS','wtau','wnotau' , 'qcd'     ,'z'    , 'tt' ,  'w' ,'dblind','d']
 #sampleList          = [ 's30'   , 's10FS' , 's40FS'  ,'s30FS', 't2tt30FS', 's225_215', 's225_145' ,'qcd'     ,'z'    , 'tt' ,  'w' ,'dblind','d']
-sampleList          = [ 's30'   , 's10FS' , 's40FS'  ,'s30FS', 't2tt30FS', 's225_215', 's225_145' ,'qcd'     ,'z'    , 'tt' ,  'w' ,'dblind','d']
+#sampleList          = [ 's30'   , 's10FS' , 's40FS'  ,'s30FS', 't2tt30FS', 's225_215', 's225_145' ,'qcd'     ,'z'    , 'tt' ,  'w' ,'dblind','d']
 try:
     samples
 except NameError:
@@ -89,14 +113,17 @@ plotListSR = ["LepPtSR","mtSR"] + plotList
 plotListCR = plotList
 
 
+#doDataPlots = process
 #doDataPlots = False
-doDataPlots = process
 
-#tfile = ROOT.TFile(saveDir+"/%s.root"%fullTag ,"recreate")      
+
 ROOT.gDirectory.cd("PyROOT:/")
-tfile = ROOT.TFile("%s.root"%fullTag ,"recreate")      
+#tfile = ROOT.TFile("%s.root"%fullTag ,"recreate")      
 
-if doDataPlots:
+if dos['dataplots'] and process:
+    shutil.copy( cuts.__file__.replace(".pyc",".py") , saveDir+"/cuts.py" )
+    pp.pprint( samples, open( saveDir+"/samples.txt" ,"w") ) 
+    tfile = ROOT.TFile(saveDir+"/%s.root"%fullTag ,"recreate")      
     yields={}
     plts=[]
 
@@ -198,11 +225,8 @@ cutInstStr="runI"
 cutInst = cutInsts[cutInstStr]['cut']
 cutOpt = cutInsts[cutInstStr]['opt']
 
-#calcTrkCutLimit = False
-calcTrkCutLimit = process
-
-redo = False
-if calcTrkCutLimit:
+redo = True
+if dos['calclimit'] and process:
 
     limits={}
     yields={}
@@ -249,21 +273,27 @@ if calcTrkCutLimit:
         canv.Write()
         #tfile.Write()
 
-tfile.Close()
+    tfile.Close()
 
 
 
-getYieldTables = True
-if getYieldTables:
+
+for samp in samples:
+    samples[samp]['tree'].SetEventList(0)
+
+if dos['yields'] and process: # and process
     samplesForTable = ['tt','z','qcd','w','s300_290','s300_270','s300_250','s300_240']
 
     ylds_presel = Yields(samples, samplesForTable, presel, cutOpt='flow', nSpaces=5, pklOpt=True, verbose=True) 
     JinjaTexTable(ylds_presel, pdfDir=tableDir, outputName="" , transpose=True)
-    ylds_sr2 = Yields(samples, samplesForTable, sr2, cutOpt='flow2', nSpaces=5, pklOpt=True, verbose=True)
+    ylds_sr2 = Yields(samples, samplesForTable, sr2, cutOpt='flow', nSpaces=5, pklOpt=True, verbose=True)
     JinjaTexTable(ylds_sr2, pdfDir=tableDir, outputName="" , transpose=True)
-    ylds_sr1 = Yields(samples, samplesForTable, sr1, cutOpt='flow2', nSpaces=5, pklOpt=True, verbose=True)
+    ylds_sr1 = Yields(samples, samplesForTable, sr1, cutOpt='flow', nSpaces=5, pklOpt=True, verbose=True)
     JinjaTexTable(ylds_sr1, pdfDir=tableDir, outputName="" , transpose=True)
     ylds_runIFlow = Yields(samples, samplesForTable, runIflow, cutOpt='inclList', nSpaces=5, pklOpt=True, verbose=True) 
     JinjaTexTable(ylds_runIFlow, pdfDir=tableDir, outputName="" , transpose=False)
+    JinjaTexTable(ylds_runIFlow, pdfDir=tableDir, outputName="ReloadCutFlow" , transpose=True)
 
 
+sampleList=['w','tt','s300_250']
+Yields(samples, sampleList, muSel, cutOpt='list', nSpaces=5, pklOpt=True, verbose=True)

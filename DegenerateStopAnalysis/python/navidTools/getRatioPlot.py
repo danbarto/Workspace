@@ -111,6 +111,7 @@ def makeCanvasMultiPads(     c1Name="canvas",  c1ww=600, c1wh=600,  joinPads=Tru
             raise Exception("Need a way to distribute the pads, either provide padRatios, or pad['m']=[xlow,ylow,xhigh,yhigh]")
         #print pads
 
+    print "======= pads:", pads
     for pad in pads:
         pad['pad'] = ROOT.TPad(pad['name'], pad['name'], *pad['m']    ) 
         if pad['gridX']: pad['pad'].SetGridx()

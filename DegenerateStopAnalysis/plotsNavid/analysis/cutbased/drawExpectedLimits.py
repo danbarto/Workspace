@@ -29,13 +29,15 @@ import glob
 bins8tev_pkls = glob.glob(bins8tev_dir+"/*.pkl")
 bins8tev_savedir = "/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload/expected_limit/8tev/bins_v2/"
 bins8tev = [
-            { "name":limitTools.get_filename(b) , "pkl":b, "savedir":bins8tev_savedir+"/%s.png"%limitTools.get_filename(b) } for b in bins8tev_pkls
+            { "name":limitTools.get_filename(b) , "pkl":b, "savedir":bins8tev_savedir+"/8tev_%s.png"%limitTools.get_filename(b) } for b in bins8tev_pkls
            ]
 
 
-bins13tev_dir  = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins_v2"    
+#bins13tev_dir  = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/Reload_IsrWeight/Bins_v2"    
+bins13tev_dir= "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/HT/2300pbm1_isrweight_v7_SR2Fixed3rdJetVeto/Bins/"
 bins13tev_pkls = glob.glob(bins13tev_dir+"/*.pkl")
-bins13tev_savedir = "/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload/expected_limit/13tev/bins_v2/"
+#bins13tev_savedir = "/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload/expected_limit/13tev/bins_v2/"
+bins13tev_savedir = "/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/isrweight_v7_SR2Fixed3rdJetVeto/HT/limits/"
 bins13tev = [
             { "name":limitTools.get_filename(b) , "pkl":b, "savedir":bins13tev_savedir+"/%s.png"%limitTools.get_filename(b) } for b in bins13tev_pkls
            ]
@@ -57,7 +59,8 @@ if __name__ == "__main__":
         #for l in result_dict:
         #    limitTools.drawExpectedLimit(result_dict[l]  )
         for l in bins8tev:                                                                           
-            limitTools.drawExpectedLimit(l)
+            if not l['name'] in ['SRSL1b', 'SRSL2', 'SRSL1a', 'SRSL1c', 'SRSL1']: continue
+            limitTools.drawExpectedLimit(l['pkl'],l['savedir'],title=l['name'])
         for l in bins13tev:
-            limitTools.drawExpectedLimit(l)
+            limitTools.drawExpectedLimit(l['pkl'],l['savedir'],title=l['name'])
 
