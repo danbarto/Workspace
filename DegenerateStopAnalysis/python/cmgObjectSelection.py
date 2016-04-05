@@ -161,9 +161,14 @@ def lepSelectorFunc( lepSel ):
                 if not lep.mediumMuonId[i] == muSel['mediumMuonId']: 
                     #print lep.mediumMuonId[i]
                     return False
-            if muSel.has_key('hybIso') : 
-                if not ( (lep.pt[i] >= muSel['hybIso']['ptSwitch'] and lep.relIso04[i] < muSel['hybIso']['relIso'] ) \
-                or (lep.pt[i] < muSel['hybIso']['ptSwitch']  and lep.relIso04[i] * lep.pt[i] < muSel['hybIso']['absIso'] ) ): 
+            #if muSel.has_key('hybIso') : 
+            #    if not ( (lep.pt[i] >= muSel['hybIso']['ptSwitch'] and lep.relIso04[i] < muSel['hybIso']['relIso'] ) \
+            #    or (lep.pt[i] < muSel['hybIso']['ptSwitch']  and lep.relIso04[i] * lep.pt[i] < muSel['hybIso']['absIso'] ) ): 
+            #        #print lep.pt, lep.relIso04, 
+            #        return False
+            if muSel.has_key('hybIso03') : 
+                if not ( (lep.pt[i] >= muSel['hybIso03']['ptSwitch'] and lep.relIso03[i] < muSel['hybIso03']['relIso'] ) \
+                or (lep.pt[i] < muSel['hybIso03']['ptSwitch']  and lep.relIso03[i] * lep.pt[i] < muSel['hybIso03']['absIso'] ) ): 
                     #print lep.pt, lep.relIso04, 
                     return False
             return True
@@ -217,10 +222,10 @@ jetSelector = jetSelectorFunc(pt=30, eta=2.4)
 #######################################                    ####################################
 ###############################################################################################
 
-def isGoodLepton(lep, ptCut=5, etaCut = 2.1, hybridIso04={"ptSwitch":25,"relIso":0.2,'absIso':5} , dzCut=0.5 , dxyCut=0.02 ,sip3dCut=999 ):
+def isGoodLepton(lep, ptCut=5, etaCut = 2.1, hybridIso03={"ptSwitch":25,"relIso":0.2,'absIso':5} , dzCut=0.5 , dxyCut=0.02 ,sip3dCut=999 ):
   if abs(lep['pdgId'])==13:
     #if  abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut and lep['sip3d'] < sip3dCut and lep['pt'] > ptCut and abs(lep['eta']) < etaCut and hybridIso04ID(lep):
-    if  abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut  and lep['pt'] > ptCut and abs(lep['eta']) < etaCut and hybridIso04ID(lep):
+    if  abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut  and lep['pt'] > ptCut and abs(lep['eta']) < etaCut and hybridIso03ID(lep):
       return True
     else: return False
   elif abs(lep['pdgId'])==11:
@@ -234,22 +239,25 @@ def isGoodLepton(lep, ptCut=5, etaCut = 2.1, hybridIso04={"ptSwitch":25,"relIso"
 #  elif abs(lep['pdgId'])==11:
 #    return False
 
-def isGoodLepFunc(ptCut=5, ptMax=999999 ,etaCut = 2.4, hybridIso04={"ptSwitch":25,"relIso":0.2,'absIso':5} , dzCut=0.2 , dxyCut=0.05 ,sip3dCut=4.0):
-    def isGoodLepton(lep, ptCut=ptCut, etaCut=etaCut, hybridIso04=hybridIso04, dzCut=dzCut, dxyCut=dxyCut, sip3dCut=sip3dCut ):
-        if abs(lep['pdgId'])==13:
-          if lep['mediumMuonId']==1 and abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut and lep['sip3d'] < sip3dCut and lep['pt'] > ptCut and lep['pt'] < ptMax and abs(lep['eta']) < etaCut and hybridIso04ID(lep):
-            return True
-          else: return False
-        elif abs(lep['pdgId'])==11:
-          return False
-    return isGoodLepton
-
-isGoodLepton30 = isGoodLepFunc(ptMax=30)
+#def isGoodLepFunc(ptCut=5, ptMax=999999 ,etaCut = 2.4, hybridIso04={"ptSwitch":25,"relIso":0.2,'absIso':5} , dzCut=0.2 , dxyCut=0.05 ,sip3dCut=4.0):
+#    def isGoodLepton(lep, ptCut=ptCut, etaCut=etaCut, hybridIso04=hybridIso04, dzCut=dzCut, dxyCut=dxyCut, sip3dCut=sip3dCut ):
+#        if abs(lep['pdgId'])==13:
+#          if lep['mediumMuonId']==1 and abs(lep['dz'])<dzCut and abs(lep['dxy']) < dxyCut and lep['sip3d'] < sip3dCut and lep['pt'] > ptCut and lep['pt'] < ptMax and abs(lep['eta']) < etaCut and hybridIso04ID(lep):
+#            return True
+#          else: return False
+#        elif abs(lep['pdgId'])==11:
+#          return False
+#    return isGoodLepton
+#
+#isGoodLepton30 = isGoodLepFunc(ptMax=30)
 
 
 
 def hybridIso04ID(lep,hybridIso04={"ptSwitch":25,"relIso":0.2,'absIso':5}):
   return (lep["pt"]>=hybridIso04['ptSwitch'] and lep["relIso04"]<hybridIso04['relIso']) or (lep["pt"]<hybridIso04['ptSwitch'] and lep["relIso04"]*lep["pt"]<hybridIso04['absIso'])
+
+def hybridIso03ID(lep,hybridIso03={"ptSwitch":25,"relIso":0.2,'absIso':5}):
+  return (lep["pt"]>=hybridIso03['ptSwitch'] and lep["relIso03"]<hybridIso03['relIso']) or (lep["pt"]<hybridIso03['ptSwitch'] and lep["relIso03"]*lep["pt"]<hybridIso03['absIso'])
 
 
 

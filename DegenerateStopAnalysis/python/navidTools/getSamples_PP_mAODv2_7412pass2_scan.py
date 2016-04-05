@@ -4,9 +4,10 @@ from Workspace.DegenerateStopAnalysis.navidTools.Sample import Sample, Samples
 from Workspace.DegenerateStopAnalysis.colors import colors
 #import Workspace.DegenerateStopAnalysis.cmgTuplesPostProcessed_mAODv2_scan as cmgTuplesPostProcessed
 from Workspace.DegenerateStopAnalysis.cmgTuplesPostProcessed_mAODv2 import cmgTuplesPostProcessed
-import Workspace.DegenerateStopAnalysis.weights as weights
+#import Workspace.DegenerateStopAnalysis.weights as weights
+from Workspace.DegenerateStopAnalysis.weights import weights , def_weights , Weight
 import os
-
+import re
 
 #-------------------------
 
@@ -25,8 +26,8 @@ lumis = {
 
 import pickle
 #mass_dict_pickle = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/cmgPostProcessing/mass_dict_all.pkl"
-mass_dict_pickle = "/data/nrad/cmgTuples/RunII/7412pass2_mAODv2_v4/RunIISpring15MiniAODv2/mass_dict_all.pkl"
-mass_dict = pickle.load(open(mass_dict_pickle,"r"))
+#mass_dict_pickle = "/data/nrad/cmgTuples/7412pass2_mAODv2_v6/RunIISpring15MiniAODv2//mass_dict.pkl"
+#mass_dict = pickle.load(open(mass_dict_pickle,"r"))
 
 
 
@@ -67,10 +68,10 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
     if any( [x in sampleList for x in ["s30", "s30FS","s10FS","s60FS" , "t2tt30FS"]] ):
         sampleDict.update({
               "s30":            {'sample': cmgPP.T2DegStop_300_270[skim]                ,'name':'S300_270'        ,'color':colors["s30"     ]             , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc      },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },  "weight":weights.isrWeight(9.5e-5)
-              "s60FS":          {'sample': cmgPP.T2DegStop_300_240_FastSim[skim]        ,'name':'S300_240Fast'      ,'color':colors["s60FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.3520)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
-              "s30FS":          {'sample': cmgPP.T2DegStop_300_270_FastSim[skim]        ,'name':'S300_270Fast'      ,'color':colors["s30FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2647)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
-              "s10FS":          {'sample': cmgPP.T2DegStop_300_290_FastSim[skim]        ,'name':'S300_290Fast'      ,'color':colors["s10FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2546)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
-              "t2tt30FS":       {'sample': cmgPP.T2tt_300_270_FastSim[skim]             ,'name':'T2tt300_270Fast'   ,'color':colors["t2tt30FS"]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""   ,"weight":"(weight*0.2783)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
+              "s60FS":          {'sample': cmgPP.T2DegStop_300_240_FastSim[skim]        ,'name':'S300_240Fast'      ,'color':colors["s60FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""  },  # ,"weight":"(weight*0.3520)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
+              "s30FS":          {'sample': cmgPP.T2DegStop_300_270_FastSim[skim]        ,'name':'S300_270Fast'      ,'color':colors["s30FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""  },  # ,"weight":"(weight*0.2647)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
+              "s10FS":          {'sample': cmgPP.T2DegStop_300_290_FastSim[skim]        ,'name':'S300_290Fast'      ,'color':colors["s10FS"   ]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""  },  # ,"weight":"(weight*0.2546)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
+              "t2tt30FS":       {'sample': cmgPP.T2tt_300_270_FastSim[skim]             ,'name':'T2tt300_270Fast'   ,'color':colors["t2tt30FS"]           , 'isSignal':2 ,'isData':0    ,"lumi":lumi_mc   ,"triggers":""   ,"filters":""  },  # ,"weight":"(weight*0.2783)"   },# ,'sumWeights':T2Deg[1] ,'xsec':8.51615    },
                           })
     if "w" in sampleList:
         WJetsSample     = cmgPP.WJetsHT[skim] if useHT else cmgPP.WJetsInc[skim]
@@ -118,8 +119,8 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
           METDataBlind    = getChain(cmgPP.MET_v4[skim],histname='')
           METDataBlind.Add(METDataOct05)
           sampleDict.update( {
-              "d":              {'tree':METDataUnblind       ,"sample":cmgPP.MET_Oct05[skim]   ,'name':"DataUnblind"      , 'color':ROOT.kBlack             , 'isSignal':0 ,'isData':1    ,"triggers":data_triggers   ,"filters":data_filters   ,"weight":"(1)"  ,'lumi': lumi_data_unblinded  },
-              "dblind":         {'tree':METDataBlind         ,"sample":cmgPP.MET_v4[skim]      ,'name':"DataBlind" , 'color':ROOT.kBlack          , 'isSignal':0 ,'isData':1              ,"triggers":data_triggers   ,"filters":data_filters   ,"weight":"(1)"  ,'lumi': lumi_data_blinded  },
+              "d":              {'tree':METDataUnblind       ,"sample":cmgPP.MET_Oct05[skim]   ,'name':"DataUnblind"      , 'color':ROOT.kBlack             , 'isSignal':0 ,'isData':1    ,"triggers":data_triggers   ,"filters":data_filters    ,'lumi': lumi_data_unblinded  },
+              "dblind":         {'tree':METDataBlind         ,"sample":cmgPP.MET_v4[skim]      ,'name':"DataBlind" , 'color':ROOT.kBlack          , 'isSignal':0 ,'isData':1              ,"triggers":data_triggers   ,"filters":data_filters    ,'lumi': lumi_data_blinded  },
                 })
         else:
             assert False
@@ -149,14 +150,17 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
     if scan:
         icolor = 1
         #skim = "inc"
+        mass_dict = cmgPP.mass_dict
+        if not mass_dict: 
+            raise Exception("No mass_dict available... Cannot create samples for mass scan")
         for mstop in mass_dict:
-            if mstop > 350 : continue
+            if mstop > 425 : continue
             for mlsp in mass_dict[mstop]:
                         #icolor += 1 
                         sampleDict.update({
                             #'s%s_%s'%(mstop,mlsp):      {'sample':eval("SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]        ,'name':'T2_4bd%s_%s'%(mstop,mlsp)          ,'color': icolor         , 'isSignal':1 ,'isData':0    ,"lumi":lumi_mc      } ,
                             #'s%s_%s'%(mstop,mlsp):      {'sample':getattr(cmgPP,"SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]        ,'name':'T2_4bd_%s_%s'%(mstop,mlsp)         , "weight":"(weight*(%s))"%weights.isrWeight(9.5e-5) ,'color': icolor         , 'isSignal':1 ,'isData':0    ,"lumi":lumi_mc      } ,
-                             's%s_%s'%(mstop,mlsp):      {'sample':getattr(cmgPP,"SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]        ,'name':'T2_4bd_%s_%s'%(mstop,mlsp)         , "weight":"weight" ,'color': icolor         , 'isSignal':1 ,'isData':0    ,"lumi":lumi_mc      } ,
+                             's%s_%s'%(mstop,mlsp):      {'sample':getattr(cmgPP,"SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]        ,'name':'T2_4bd_%s_%s'%(mstop,mlsp)         ,'color': icolor         , 'isSignal':1 ,'isData':0    ,"lumi":lumi_mc      } ,
                                             })
 
 
@@ -174,7 +178,7 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
                         rootfile = get8TevSample(mstop,mlsp)
                         if os.path.isfile( rootfile):
                             sampleDict.update({
-                                 's8tev_%s_%s'%(mstop,mlsp):      {'tree': getChain({'file': rootfile, 'name':name})       ,'name':name         , "weight":"weight" ,'color': icolor         , 'isSignal':3 ,'isData':0    ,"lumi":19700      } ,
+                                 's8tev%s_%s'%(mstop,mlsp):      {'tree': getChain({'file': rootfile, 'name':name})       ,'name':name    ,'color': icolor         , 'isSignal':3 ,'isData':0    ,"lumi":19700      } ,
                                                })
 
 
@@ -193,19 +197,29 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
                          })
     sampleDict2 = {}
     for samp in sampleDict:
-      sampleDict2[samp]=Sample(**sampleDict[samp])
+
+        if weights.has_key(samp):
+            sampleDict[samp]["weights"]  = weights[samp]
+        elif scan and re.match("s\d\d\d_\d\d\d|s\d\d\d_\d\d|",samp).group():
+            sampleDict[samp]["weights"] = weights["sigScan"]
+        elif do8tev and re.match("s8tev\d\d\d_\d\d\d|s8tev\d\d\d_\d\d|",samp).group():                
+            sampleDict[samp]["weights"] = weights["sigScan_8tev"]
+        else:
+            sampleDict[samp]["weights"] = Weight({},def_weights)
+
+        sampleDict2[samp] = Sample(**sampleDict[samp])
     samples = Samples(**sampleDict2)
 
 
-    samples.addLumiWeight( lumi_target = lumi_target, lumi_base = None , sampleList=[])         ## scale to the target luminosity
-    samples.addWeight( weights.isrWeight(9.5e-5)  , sampleList=samples.privSigList() + samples.massScanList() )   ## apply isrWeight to the massScan
+    #samples.addLumiWeight( lumi_target = lumi_target, lumi_base = None , sampleList=[])         ## scale to the target luminosity
+    #samples.addWeight( weights.isrWeightFunc(9.5e-5)  , sampleList=samples.privSigList() + samples.massScanList() )   ## apply isrWeight to the massScan
 
-    if do8tev:
-        weight_8tev = "puWeight*wpts4X*(1.+7.5e-5*Max$(gpM*(gpPdg==1000006)))*(1.*(ptISR<120.)+0.95*(ptISR>=120.&&ptISR<150.)+0.9*(ptISR>=150.&&ptISR<250.)+0.8*(ptISR>=250.))"
-        for samp in samples.otherSigList():
-            samples[samp].weight = weight_8tev
-            #samples[samp].weight = "(1)"
-        #samples.addWeight( weight_8tev  , sampleList=samples.otherSigList()  )
+    #if do8tev:
+    #    weight_8tev = "puWeight*wpts4X*(1.+7.5e-5*Max$(gpM*(gpPdg==1000006)))*(1.*(ptISR<120.)+0.95*(ptISR>=120.&&ptISR<150.)+0.9*(ptISR>=150.&&ptISR<250.)+0.8*(ptISR>=250.))"
+    #    for samp in samples.otherSigList():
+    #        samples[samp].weight = weight_8tev
+    #        #samples[samp].weight = "(1)"
+    #    #samples.addWeight( weight_8tev  , sampleList=samples.otherSigList()  )
 
 
     return samples

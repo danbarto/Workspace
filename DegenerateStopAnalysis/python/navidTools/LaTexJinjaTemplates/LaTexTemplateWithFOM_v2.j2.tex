@@ -22,7 +22,8 @@
 \BLOCK{- endif}
 
 \#{ BLOCK{- set colSetup="|c"*2+ "|c"*nBkgs +"||c|" + "|c"*nSigs*2 +"|" }
-\BLOCK{- set colSetup="|c"*(nCols+2) +"|" }
+\#{ BLOCK{- set colSetup="|c"*(nCols+2) +"|" }
+\BLOCK{- set colSetup="|c| c|"+"c"*(nCols) +" | " }
 
 % \VAR{ rowList }
 %     nRow=\VAR{nRows}

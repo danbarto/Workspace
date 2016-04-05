@@ -1,10 +1,18 @@
 
-from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import makeStopLSPPlot, getTH2FbinContent
+from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import makeStopLSPPlot, getTH2FbinContent, makeDir, setup_style
 from Workspace.HEPHYPythonTools.xsecSMS import stop13TeV_NLONLL , stop8TeV_NLONLL 
 import ROOT
 import pickle
 
 lumi_8tev = 19700  ##pb-1
+
+from optparse import OptionParser
+parser = OptionParser()
+(options,args) = parser.parse_args()
+
+
+
+setup_style()
 
 
 yield_opts = {
@@ -20,13 +28,35 @@ yield_opts = {
               'v7': { 'pkl':"./pkl/YieldInstance_Reload_Inc_isrweight_v7_SR2Fixed3rdJetVeto_Scan.pkl" , 
                                 'saveDir':"/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/isrweight_v7_SR2Fixed3rdJetVeto/HT/effmap/" , 'lumi':2300},
               'v0':  { 'pkl':"./pkl/Scan_v0/RunII_Reload_Scan_Yields.pkl" , 'saveDir':"/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload_scan/effmap/" , 'lumi':10000},
+ 
+             'lepFix_v0': { 'pkl':"./pkl/YieldInstance_Reload_HT_lepFix_v0_Scan.pkl" , 
+                                'saveDir':"/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2_v6/lepFix_v0/HT/effmap/" , 'lumi':2300},
+             'lepFix_v1': { 'pkl':"./pkl/YieldInstance_Reload_HT_lepFix_v1_Scan.pkl" , 
+                                'saveDir':"/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2_v6/lepFix_v1/HT/effmap/" , 'lumi':2300},
+             'lepFix_v2': { 'pkl':"./pkl/YieldInstance_Reload_HT_lepFix_v2_Scan.pkl" , 
+                                'saveDir':"/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2_v6/lepFix_v2/HT/effmap/" , 'lumi':2300},
              }
 
-#yieldopt=yield_opts['isr23fbm1']
-yieldopt=yield_opts['v7']
 
-yield_pickle =   yieldopt['pkl'] 
-saveDir      =   yieldopt['saveDir']
+
+#yieldopt=yield_opts['isr23fbm1']
+yieldopt=yield_opts['lepFix_v2']
+
+
+if len(args)==2:
+    yield_pickle = args[0]
+    saveDir      = args[1]
+    pass
+else:
+
+    yield_pickle =   yieldopt['pkl'] 
+    saveDir      =   yieldopt['saveDir']
+
+    raise Exception("Needs Two Arguments, path to the limit.pkl, and savedir")
+
+
+
+makeDir(saveDir)
 
 target_lumi = 2300
 
@@ -71,7 +101,7 @@ lside.SetTextAlign(10)
 lside.SetTextAngle(90)
 
 
-tf = ROOT.TFile("8TeVMaterials/efficienciesSRSL.root")
+tf = ROOT.TFile("/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/analysis/cutbased/8TeVMaterials/efficienciesSRSL.root")
 eff8tev = tf.effSRSL1a
 eff8tevDict = getTH2FbinContent(eff8tev)
 
@@ -270,7 +300,7 @@ for cut in combined_bins:
 
     for sig in sigList:
         mstop , mlsp = [int(x) for x in sig[1:].rsplit("_")]    
-        if mstop > 425: continue
+        if mstop > 350: continue
         if not ratio[cut].has_key(mstop):
             ratio[cut][mstop]={}
         ratio[cut][mstop][mlsp] = ae[cut][mstop][mlsp]/eff8tevDict[mstop][mlsp]         
@@ -341,7 +371,7 @@ for cut in combined_bins:
     yld_ratio[cut] = {}
     for sig in sigList:
         mstop , mlsp = [int(x) for x in sig[1:].rsplit("_")]    
-        if mstop > 425: continue
+        if mstop > 350: continue
         if not yld_ratio[cut].has_key(mstop):
             yld_ratio[cut][mstop]={}
         #yld_ratio[cut][mstop][mlsp] = ae[cut][mstop][mlsp]/eff8tevDict[mstop][mlsp]         

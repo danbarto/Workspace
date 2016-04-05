@@ -7,8 +7,8 @@ from Workspace.HEPHYPythonTools.helpers import getChain
 class Sample(dict):
     #def __init__(self, *args, **kwargs):
     #    super(Sample, self).__init__(*args, **kwargs)
-    def __init__(self, name,tree=None,sample=None, isSignal=0,isData=0,color=0,lineColor=0,triggers="",filters="",weight="weight", **kwargs):
-        super(Sample, self).__init__(name=name,tree=tree,sample=sample, isSignal=isSignal, isData=isData,color=color ,triggers=triggers, filters=filters,weight=weight,**kwargs)
+    def __init__(self, name,tree=None,sample=None, isSignal=0,isData=0,color=0,lineColor=0,triggers="",filters="",weight="weight",weights=None, **kwargs):
+        super(Sample, self).__init__(name=name,tree=tree,sample=sample, isSignal=isSignal, isData=isData,color=color ,triggers=triggers, filters=filters,weight=weight,weights=weights,**kwargs)
         self.__dict__ = self 
         #print self
         #bool(self.tree) ^ bool(self.sample) , "Provide either a tree, or sampleDic in the form of {'bins'=[], 'dir':/path/to/bins/, 'name':SampleName}"
@@ -36,70 +36,70 @@ class Samples(dict):
             includes_data= True
             print "--------- Samples include data,", dataList 
 
-            self.addWeightFromDataLumi(dataList)
+    #        self.addWeightFromDataLumi(dataList)
 
-            for d in dataList:
-                if self[d].isSignal:
-                    assert False, ("A sample is Signal and Data??!... nice try, but NO! ", d)
-                data_name = self[d]['name']
-                data_lumi = self[d]['lumi']
-                weight_name = data_name +"_weight"
-                print "--------- %s will be created for MC samples using the data lumi:    %s fb-1 "%(weight_name, data_lumi)
-                for samp in self:
-                    if not self[samp].isData:
-                        self[samp][weight_name] = "({w})*({dlumi})/({mclumi})".format(w=self[samp].weight, dlumi=data_lumi, mclumi=self[samp].lumi)
+    #        for d in dataList:
+    #            if self[d].isSignal:
+    #                assert False, ("A sample is Signal and Data??!... nice try, but NO! ", d)
+    #            data_name = self[d]['name']
+    #            data_lumi = self[d]['lumi']
+    #            weight_name = data_name +"_weight"
+    #            print "--------- %s will be created for MC samples using the data lumi:    %s fb-1 "%(weight_name, data_lumi)
+    #            for samp in self:
+    #                if not self[samp].isData:
+    #                    self[samp][weight_name] = "({w})*({dlumi})/({mclumi})".format(w=self[samp].weight, dlumi=data_lumi, mclumi=self[samp].lumi)
 
-    def addWeightFromDataLumi(self, dataList):            
-        for d in dataList:
-            if self[d].isSignal:
-                assert False, ("A sample is Signal and Data??!... nice try, but NO! ", d)
-            data_name = self[d]['name']
-            data_lumi = self[d]['lumi']
-            weight_name = data_name +"_weight"
-            print "--------- %s will be created for MC samples using the data lumi:    %s fb-1 "%(weight_name, data_lumi)
-            for samp in self:
-                if not self[samp].isData:
-                    self[samp][weight_name] = "(({w})*({dlumi})/({mclumi}))".format(w=self[samp].weight, dlumi=data_lumi, mclumi=self[samp].lumi)
+    #def addWeightFromDataLumi(self, dataList):            
+    #    for d in dataList:
+    #        if self[d].isSignal:
+    #            assert False, ("A sample is Signal and Data??!... nice try, but NO! ", d)
+    #        data_name = self[d]['name']
+    #        data_lumi = self[d]['lumi']
+    #        weight_name = data_name +"_weight"
+    #        print "--------- %s will be created for MC samples using the data lumi:    %s fb-1 "%(weight_name, data_lumi)
+    #        for samp in self:
+    #            if not self[samp].isData:
+    #                self[samp][weight_name] = "(({w})*({dlumi})/({mclumi}))".format(w=self[samp].weight, dlumi=data_lumi, mclumi=self[samp].lumi)
 
 
-    def addLumiWeight(self, lumi_target, lumi_base=None , sampleList=[]):
-        if not sampleList:
-            bkgList = self.bkgList()
-            sigList = self.sigList()
-            sampleList = bkgList + sigList
+    #def addLumiWeight(self, lumi_target, lumi_base=None , sampleList=[]):
+    #    if not sampleList:
+    #        bkgList = self.bkgList()
+    #        sigList = self.sigList()
+    #        sampleList = bkgList + sigList
 
-        useSampleLumiAsBaseLumi = True if not lumi_base else False
-        for samp in sampleList:
-            if self[samp].isData: 
-                continue
-            if useSampleLumiAsBaseLumi:
-                lumi_base = self[samp].lumi 
-            else:
-                print "lumibase:", lumi_base, self[samp].lumi
-            lumi_weight = "(%s/%s)"%(lumi_target, lumi_base)
-            #print "lumi weighting", samp, lumi_target, lumi_base, lumi_weight
-            self[samp].Luminosity_weight = lumi_weight 
-            self[samp].lumi = lumi_target
-            self.addWeight(lumi_weight, sampleList=[samp])
-        
+    #    useSampleLumiAsBaseLumi = True if not lumi_base else False
+    #    for samp in sampleList:
+    #        if self[samp].isData: 
+    #            continue
+    #        if useSampleLumiAsBaseLumi:
+    #            lumi_base = self[samp].lumi 
+    #        else:
+    #            print "lumibase:", lumi_base, self[samp].lumi
+    #        lumi_weight = "(%s/%s)"%(lumi_target, lumi_base)
+    #        #print "lumi weighting", samp, lumi_target, lumi_base, lumi_weight
+    #        self[samp].Luminosity_weight = lumi_weight 
+    #        self[samp].lumi = lumi_target
+    #        self.addWeight(lumi_weight, sampleList=[samp])
+    #    
 
-    def addWeight(self, weight, sampleList=[]):
-        if not sampleList:
-            bkgList = self.bkgList()
-            sigList = self.sigList()
-            sampleList = bkgList + sigList
+    #def addWeight(self, weight, sampleList=[]):
+    #    if not sampleList:
+    #        bkgList = self.bkgList()
+    #        sigList = self.sigList()
+    #        sampleList = bkgList + sigList
 
-        for samp in sampleList:
-            if not hasattr(self[samp],"weight"):
-                new_weight  = weight
-            else:
-                new_weight = "(%s *  %s)"%(self[samp]["weight"], weight)
-            #print samp, new_weight
-            self[samp]["weight"] = new_weight
-    
-        dataList = self.dataList()
-        if dataList:
-            self.addWeightFromDataLumi(dataList)    
+    #    for samp in sampleList:
+    #        if not hasattr(self[samp],"weight"):
+    #            new_weight  = weight
+    #        else:
+    #            new_weight = "(%s *  %s)"%(self[samp]["weight"], weight)
+    #        #print samp, new_weight
+    #        self[samp]["weight"] = new_weight
+    # 
+    #    dataList = self.dataList()
+    #    if dataList:
+    #        self.addWeightFromDataLumi(dataList)    
 
 
     def bkgList(self):

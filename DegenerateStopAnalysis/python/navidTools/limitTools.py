@@ -18,9 +18,12 @@ def getMasses(string):
     splitted = re.split("_|-", string)
     #splitted = string.rsplit("_"):
     for s in splitted: 
+        if s.startswith("s8tev"):
+            s = s[5:]
         if s.startswith("s"):
             s = s[1:]
-        if not s.isdigit(): continue
+        if not s.isdigit(): 
+            continue
         masses.append(s)
     if len(masses)!=2 or int(masses[0]) < int(masses[1]):
         raise Exception("Failed to Extract masses from string: %s , only got %s "%(string, masses))        

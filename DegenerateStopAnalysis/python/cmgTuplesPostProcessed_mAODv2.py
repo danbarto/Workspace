@@ -45,9 +45,9 @@ class cmgTuplesPostProcessed():
         self.data_path  =   data_path
         self.lumi       =   lumi_mc 
 
-        print "MC DIR:      ",   mc_path
-        print "SIGNAL DIR:  ",   signal_path
-        print "DATA DIR:    ",   data_path
+        print "MC DIR:      ",   self.mc_path
+        print "SIGNAL DIR:  ",   self.signal_path
+        print "DATA DIR:    ",   self.data_path
         
         self.TTJetsInc=self.makeSample({\
         "name" : "TTJetsInc",
@@ -260,8 +260,13 @@ class cmgTuplesPostProcessed():
         
         
         import pickle
-        mass_dict_pickle = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/cmgPostProcessing/mass_dict_all.pkl"
+
+
+        #mass_dict_pickle = "/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/cmgPostProcessing/mass_dict_all.pkl"
+        mass_dict_pickle = "/data/nrad/cmgTuples/7412pass2_mAODv2_v6/RunIISpring15MiniAODv2//mass_dict.pkl"
         mass_dict = pickle.load(open(mass_dict_pickle,"r"))
+
+        self.mass_dict = mass_dict
         mass_scan={}
 
         for mstop in mass_dict:

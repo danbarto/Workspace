@@ -247,15 +247,16 @@ def getSamples(args):
     if cmgTuples == "Data_25ns":
         # from Workspace.DegenerateStopAnalysis.cmgTuples_Data25ns import *
         #import Workspace.DegenerateStopAnalysis.cmgTuples_Data25ns as cmgSamples
-        import Workspace.DegenerateStopAnalysis.cmgTuples_Data25ns_scan as cmgSamples
+        #import Workspace.DegenerateStopAnalysis.cmgTuples_Data25ns_scan as cmgSamples
+        import Workspace.DegenerateStopAnalysis.cmgTuples_Data25ns_v6 as cmgSamples
     elif cmgTuples == "Data_50ns":
         import Workspace.DegenerateStopAnalysis.cmgTuples_Data50ns_1l as cmgSamples
     #elif cmgTuples == "RunIISpring15DR74_25ns":
     #    import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_7412pass2 as cmgSamples
-    elif cmgTuples == "RunIISpring15DR74_25ns":
+    elif cmgTuples == "RunIISpring15DR74_25ns_v4":
         import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_7412pass2_mAODv2_v4 as cmgSamples
-    elif cmgTuples == "RunIISpring15DR74_25ns_v5":
-        import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_7412pass2_mAODv2_v5 as cmgSamples
+    elif cmgTuples == "RunIISpring15DR74_25ns":
+        import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_7412pass2_mAODv2_v6 as cmgSamples
     elif cmgTuples == "RunIISpring15DR74_50ns":
         import Workspace.DegenerateStopAnalysis.cmgTuples_Spring15_50ns as cmgSamples
     else:
@@ -362,7 +363,8 @@ def getSamples(args):
         os.makedirs(outDir)
 
     if hasattr(cmgSamples,"mass_dict"):
-        mass_dict = cmgSamples.mass_dict
+        #mass_dict = cmgSamples.mass_dict
+        mass_dict = cmgSamples.mass_dict_samples
     else:
         mass_dict = {}
 
@@ -372,35 +374,6 @@ def getSamples(args):
     
 
  
-def getSignalScanSamples(args):
-
-
-    #for mstop in mass_dict.keys():
-    #    for mlsp in mass_dict[mstop].keys():
-    #        skimCond = "Sum$(abs(GenPart_pdgId)==1000022&&abs(GenPart_motherId)==1000024&&abs(GenPart_grandmotherId)==1000021)==2&&(Sum$(abs(GenPart_pdgId)==24)==2)"
-    #        skimCond += "(GenSusyMStop==%s) && (GenSusyMNeutralino==%s) "%(mstop,mlsp)
-    #        outDir   = ""     
-
-
-    mstop=args.processSignalScan[0]
-    mlsp =args.processSignalScan[1]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -605,7 +578,7 @@ def rwTreeClasses(sample, isample, args, temporaryDir, params={} ):
             'lepOtherMass/F', 'lepOtherDz/F', 'lepOtherDxy/F','lepOtherMediumMuonId/I','lepOtherSip3d/F',
             
             'lepPt/F','lepMiniRelIso/F','lepRelIso03/F' , 'lepRelIso04/F',
-            'lepAbsIso/F' ,'lepEta/F',  'lepPhi/F', 'lepPdgId/I/0', 'lepInd/I/-1', 
+            'lepAbsIso03/F' ,'lepAbsIso04/F', 'lepEta/F',  'lepPhi/F', 'lepPdgId/I/0', 'lepInd/I/-1', 
             'lepMass/F', 'lepDz/F', 'lepDxy/F','lepMediumMuonId/I','lepSip3d/F',
             'nlep/I',
 
@@ -930,7 +903,7 @@ def processLeptons(leptonSelection, readTree, splitTree, saveTree, params):
     elSelector =  cmgObjectSelection.lepSelectorFunc( {"el":LepSel['el'] } )
 
     #lepSelectorPt30 =  cmgObjectSelection.lepSelectorFunc( LepSelPt30)
-    #muSelectorPt302 =  cmgObjectSelection.lepSelectorFunc( {"mu":LepSelPt30['mu'] } )
+    muSelectorPt30 =  cmgObjectSelection.lepSelectorFunc( {"mu":LepSelPt30['mu'] } )
     #elSelectorPt302 =  cmgObjectSelection.lepSelectorFunc( {"el":LepSelPt30['el'] } )
 
 
@@ -941,9 +914,9 @@ def processLeptons(leptonSelection, readTree, splitTree, saveTree, params):
 
 
         #lepList      =  lepObj.getSelectionIndexList(readTree, muSelector )
-        #lepPt30List  =  lepObj.getSelectionIndexList(readTree, muPt30Selector, lepList )
 
         lepList     =  lepObj.getSelectionIndexList(readTree, muSelector )
+        lepPt30List  =  lepObj.getSelectionIndexList(readTree, muSelectorPt30, lepList )
 
         #lepPt30List     =  lepObj.getSelectionIndexList(readTree, muSelectorPt302 )
 
@@ -1052,7 +1025,8 @@ def processLeptons(leptonSelection, readTree, splitTree, saveTree, params):
             for var in varsToKeep:
                 varName = lepName + var[0].capitalize() + var[1:]
                 setattr(saveTree, varName, lep[var])
-            saveTree.lepAbsIso = lep['relIso04'] * lep['pt'] 
+            saveTree.lepAbsIso04 = lep['relIso04'] * lep['pt'] 
+            saveTree.lepAbsIso03 = lep['relIso03'] * lep['pt'] 
             saveTree.nlep = len(selectedLeptons)
             saveTree.singleLeptonic = (saveTree.nlep == 1)
              
@@ -1702,7 +1676,8 @@ def cmgPostProcessing(argv=None):
                     #"dz":0.2   ,
                     #"sip3d":4  , 
                     #"mediumMuonId": 1 , 
-                    "hybIso":{  "ptSwitch": 25, "relIso":0.2 , "absIso":5  }
+                    #"hybIso":{  "ptSwitch": 25, "relIso":0.2 , "absIso":5  }
+                    "hybIso03":{  "ptSwitch": 25, "relIso":0.2 , "absIso":5  }
                  },
             "el":{
                     "pdgId":11  ,  
@@ -1750,26 +1725,6 @@ def cmgPostProcessing(argv=None):
             "nISRsList"      :  [],
                     } )
 
-    #   prepare for signal scan
-    
-    if args.processSignalScan:
-        #mass_dict = pickle.load( open("./mass_dicts/%s_mass_nEvents_xsec.pkl"%sample,"r"))
-        #from mass_dict import mass_dict
-        #mass_dict = pickle.load(open("mass_dict_all.pkl","r"))
-
-        if len(mass_dict) ==0:
-            print "Mass Dict Not Avail. It's needed to split signal scan mass points"
-            raise Exception("Mass Dict Not Avail. It's needed to split signal scan mass points")
-
-        mstop = args.processSignalScan[0]
-        mlsp = args.processSignalScan[1]
-        xsec = mass_dict[int(mstop)][int(mlsp)]['xsec']
-        nEntries = mass_dict[int(mstop)][int(mlsp)]['nEntry']
-
-    # skim condition 
-    signalMasses =[mstop, mlsp] if args.processSignalScan else []
-    skimCond =  eventsSkimPreselect(skim, leptonSelection, preselect, signalMasses)
-    logger.info("\n Final skimming condition: \n  %s \n", skimCond)
     
     # loop over each sample, process all variables and fill the saved tree
     
@@ -1777,8 +1732,30 @@ def cmgPostProcessing(argv=None):
         
         sampleName = sample['cmgComp'].name
         sampleType = 'Data' if sample['cmgComp'].isData else 'MC'
+
+        #   prepare for signal scan
+        if args.processSignalScan:
+            if len(mass_dict) ==0:
+                print "Mass Dict Not Avail. It's needed to split signal scan mass points"
+                raise Exception("Mass Dict Not Avail. It's needed to split signal scan mass points")
+            mass_dict = mass_dict[sample['name']]
+            mstop = args.processSignalScan[0]
+            mlsp = args.processSignalScan[1]
+            xsec = mass_dict[int(mstop)][int(mlsp)]['xSec']
+            nEntries = mass_dict[int(mstop)][int(mlsp)]['nEvents']
+
+        # skim condition 
+        signalMasses =[mstop, mlsp] if args.processSignalScan else []
+        skimCond =  eventsSkimPreselect(skim, leptonSelection, preselect, signalMasses)
+        logger.info("\n Final skimming condition: \n  %s \n", skimCond)
+
+
                       
         chunks, sumWeight = hephyHelpers.getChunks(sample)
+
+
+
+
 
             
 

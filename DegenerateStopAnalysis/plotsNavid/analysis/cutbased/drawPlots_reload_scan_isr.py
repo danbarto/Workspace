@@ -33,8 +33,8 @@ import plots
 runTag = "isrweight_v8_LepSelFix"
 
 
+#ppTag="7412pass2_SMSScan_v5"
 ppTag="7412pass2_SMSScan_v3"
-ppTag="7412pass2_SMSScan_v5"
 
 dos = {
         "dataplots":    True,

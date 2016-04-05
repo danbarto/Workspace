@@ -6,7 +6,7 @@ import numpy as np
 import glob
 import jinja2
 import pprint as pp
-
+from copy import deepcopy
 
 from Workspace.HEPHYPythonTools.helpers import getChain, getPlotFromChain, getYieldFromChain, getChunks
 from Workspace.DegenerateStopAnalysis.navidTools.getRatioPlot import *
@@ -19,14 +19,16 @@ from Workspace.HEPHYPythonTools.u_float import u_float
 #reload(Workspace.DegenerateStopAnalysis.navidTools.getRatioPlot)
 
 
-cmsbase = os.getenv("CMSSW_BASE")
-print "CMSBASE", cmsbase
-ROOT.gROOT.LoadMacro(cmsbase+"/src/Workspace/HEPHYPythonTools/scripts/root/tdrstyle.C")
-ROOT.setTDRStyle()
-ROOT.gStyle.SetErrorX(0.5)
-maxN = -1
-ROOT.gStyle.SetOptStat(0)
-ROOT.gStyle.SetPalette(1)
+def setup_style():
+    cmsbase = os.getenv("CMSSW_BASE")
+    print "CMSBASE", cmsbase
+    ROOT.gROOT.LoadMacro(cmsbase+"/src/Workspace/HEPHYPythonTools/scripts/root/tdrstyle.C")
+    ROOT.setTDRStyle()
+    ROOT.gStyle.SetErrorX(0.5)
+    maxN = -1
+    ROOT.gStyle.SetOptStat(0)
+    ROOT.gStyle.SetPalette(1)
+    return cmsbase
 #ROOT.gStyle.SetCanvasPreferGL(1)
 
 #pp=prettyprint.PrettyPrinter(indent=3, depth=5, width=120)
@@ -207,6 +209,7 @@ class ArgParser(argparse.ArgumentParser):
 
 
 #############################################################################################################
+##########################################                    ###############################################
 ##########################################    EVENT LISTS     ###############################################
 ##########################################                    ###############################################
 #############################################################################################################
@@ -314,7 +317,8 @@ def decorHist(samp,cut,hist,decorDict):
     elif samp.isData:
         pass
     else:
-        print "default color used for:", samp.name # , cut, hist, decorDict
+        #print "default color used for:", samp.name # , cut, hist, decorDict
+        pass
     if dd.has_key("x") and dd['x']:
         hist.GetXaxis().SetTitle(dd['x'])
     if dd.has_key("y") and dd['y']:
@@ -538,18 +542,34 @@ def getPlots(samples,plots,cut,sampleList=[],plotList=[],weight="(weight)",nMinu
  
         if "Blind" in samples[dataList[0]].name and "sr" in cut.name:
             raise Exception("NO DATA IN SIGNAL REGION: %s"%[dataList, cut.name])
-        weight = samples[dataList[0]].name+"_weight"
+        #weight = samples[dataList[0]].name+"_weight"
+        lumi_weight = samples[dataList[0]].name+"_lumi"
+    else:
+        lumi_weight = "target_lumi"
 
     if len(dataList) > 1:
         raise Exception("More than one Data Set in the sampleList... This could be dangerous: %s"%dataList)
 
+    if verbose: print " "*15, "Getting Plots: ", plotList
     for sample in samples.iterkeys():
         #if sample in sampleList or not sampleList:
         if not sample in sampleList:
             continue
-        if verbose: print "  Sample:" , samples[sample].name, 
-        weight_str = decide_weight(samples[sample], weight)
-        if verbose: print "  Using Weight: %s"%(weight_str)
+        if verbose: print "========= Sample:" , samples[sample].name, 
+        #weight_str = decide_weight(samples[sample], weight)
+        weight_str = decide_weight2(samples[sample] , cut=cut.name, lumi=lumi_weight)
+        if verbose: 
+            print "  Using Weight: %s"%(weight_str)
+            print "    lumi: ", lumi_weight
+            if samples[sample].isData:
+                print "-----"*10 , samples[sample].name
+                print "-----"*20
+                print "Applying Triggers: %s"%samples[sample]['triggers']
+                print "Applying Filters: %s"%samples[sample]['filters']
+                print "-----"*20
+                print "-----"*20
+                
+
         plotList = plotList if plotList else plots.keys()
         for plot in plotList:
             if plot not in plots.keys():
@@ -559,13 +579,12 @@ def getPlots(samples,plots,cut,sampleList=[],plotList=[],weight="(weight)",nMinu
             cutStr = plots[plot]['cut']  if plots[plot].has_key("cut") and plots[plot]['cut'] else ''
             if cutStr: print "        ---applying cutString:", cutStr
             
-            if verbose: print " "*15, plot
+            #if verbose: print " "*15, plot
             if nMinus1:
                 nMinus1String = nMinus1
                 #nMinus1String = plots[plot]["nMinus1"] if plots[plot].has_key("nMinus1") else nMinus1
             else: nMinus1String=""
             getPlot(samples[sample],plots[plot],cut,weight=weight_str,nMinus1=nMinus1String,cutStr=cutStr,addOverFlowBin=addOverFlowBin)
-
 
           
 def getSigBkgDataLists ( samples, sampleList):
@@ -636,7 +655,7 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
                 padRatios=[2,1]
             else:
                 padRatios=[2]+[1]*(len(denoms))
-            print "            padRatios:  ", padRatios
+            #print "            padRatios:  ", padRatios
 
             canvs[p]=makeCanvasMultiPads(c1Name="%s_%s"%(cut.name,p),c1ww=800,c1wh=800, joinPads=True, padRatios=padRatios, pads=[])
             cSave , cMain=0,1   # index of the main canvas and the canvas to be saved
@@ -751,7 +770,7 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
         fomHists[plot]={}
         if "ratio" in fomFunc.lower():
             pass
-        print "isdataplot:",  [ x in dataList for x in noms ]
+        #print "isdataplot:",  [ x in dataList for x in noms ]
         if any( [ x in dataList for x in noms ]):       
             isDataPlot=True
             fomPlotTitle = "DATA/MC     " if "bkg" in denoms else "BAAAAAAAAAAAAAA"
@@ -814,8 +833,8 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
                 Func.SetLineWidth(1)
                 Func.Draw("same")
                 fomHists[plot][denom].update({'func':Func})
-            print 'fom min max', fomMin, fomMax
-            print "first fom hist", first_nom
+            #print 'fom min max', fomMin, fomMax
+            #print "first fom hist", first_nom
             if fomLimits:
                 fomHists[plot][denom][first_nom].SetMinimum(fomLimits[0] )
                 fomHists[plot][denom][first_nom].SetMaximum(fomLimits[1] )
@@ -823,7 +842,7 @@ def getFOMPlotFromStacks( ret, plot, sampleList ,fom=True, normalize=False,
                 fomHists[plot][denom][first_nom].SetMaximum(fomMax*(1.2) )
                 fomHists[plot][denom][first_nom].SetMinimum(fomMin*(0.8) )
             fomHists[plot][denom][first_nom].Draw("same")
-            print "idenom", idenom
+            #print "idenom", idenom
             canvs[plot][idenom].RedrawAxis()
             canvs[plot][idenom].Update()
 
@@ -1055,7 +1074,7 @@ def getAndDrawQuickPlots(samples,var,bins=[],varName='',cut="(1)",weight="weight
         if sampKey not in sampleList:
             continue
         samp = samples[sampKey]
-        weightStr = decide_weight(samp, weight)
+        weightStr = decide_weight2(samp, weight)
         if sampKey in sigList:
             ret['hists'][sampKey]=getGoodPlotFromChain(samp.tree, var, binning = bins, varName=varName, cutString=cut, weight=weightStr, color = samp.color, lineWidth=2 )
         if sampKey in bkgList:
@@ -1112,7 +1131,7 @@ def getTH2FbinContent(hist):
                 cont[xbin][ybin]=hist.GetBinContent(x,y)
     return cont
 
-def makeStopLSPPlot(name, massDict, title="", bins = [22,100,650, 65,0,650 ], key=None, setbin=False ):
+def makeStopLSPPlot(name, massDict, title="", bins = [22,100,650, 65,0,650 ], key=None, func=None,setbin=False ):
     """
     massDict should be of the form {    
                                     stopmass1: { lsp_mass_1: a, lsp_mass_2: b ... },
@@ -1121,6 +1140,7 @@ def makeStopLSPPlot(name, massDict, title="", bins = [22,100,650, 65,0,650 ], ke
                                     }
     with a, b, c,d ... the bin content TH2D
     if key available then key(a) will be evaluated
+    if func available then func(mstop,mlsp) will be evaluted. (func will override key)
     """
     plot = ROOT.TH2F(name,title, *bins )
     if setbin:
@@ -1136,7 +1156,9 @@ def makeStopLSPPlot(name, massDict, title="", bins = [22,100,650, 65,0,650 ], ke
     else:
         for stop_mass in massDict:
             for lsp_mass in massDict[stop_mass]:
-                if key:
+                if func:
+                    val = func(stop_mass, lsp_mass)
+                elif key:
                     val = key(massDict[stop_mass][lsp_mass])
                 else:
                     val = massDict[stop_mass][lsp_mass]
@@ -1284,7 +1306,8 @@ def combineCutList(cutList):
 def joinCutStrings(cutStringList):
   return "(" + " && ".join([ "("+c +")" for c in cutStringList])    +")"
 
-
+def joinWeightList(weightStringList):
+    return "(" + " * ".join([ "("+c +")" for c in weightStringList])    +")"
 
 
 
@@ -1390,7 +1413,7 @@ def addBaseCutString(cutList, baseCutString ):
 
 #############################################################################################################
 ##########################################                    ###############################################
-##########################################    YIELDS CLASS    ###############################################
+##########################################    Weight CLASS    ###############################################
 ##########################################                    ###############################################
 #############################################################################################################
 
@@ -1426,7 +1449,75 @@ def addBaseCutString(cutList, baseCutString ):
 #        raise Exception("When an instance of CutClass is given, a weight Dictionary is also required.")
 #
 
-def decide_weight( sample, weight):
+
+def makeDefaultDict(d, default_dict):
+        for key in default_dict:
+            d.setdefault(key,deepcopy(default_dict[key]))
+            if type( default_dict[key] ) == type({}):
+                if not type(d[key]) == type({}):
+                    raise Exception("There is inconsistancy between input dict and the default dict for key %s, dict:%s \n def_dict:%s \n"%(key,d, default_dict))
+                else:
+                    makeDefaultDict(d[key], default_dict[key])
+            else:
+                pass
+
+class Weight(object):
+    """
+
+    """
+    def __init__(self, weight_dict={}, def_weights={}):
+        self.weight_dict = deepcopy(weight_dict)
+        makeDefaultDict(self.weight_dict, def_weights)
+    
+    def getWeightList(self, weight_dict, cut="default", lumi="target_lumi"):
+        weight_list=[]
+        for weight_key in weight_dict:
+            if weight_key == "cuts":
+                if weight_dict['cuts'].has_key(cut):
+                    new_weight =  weight_dict['cuts'][cut]
+                else:
+                    new_weight =  weight_dict['cuts']["default"]
+            elif weight_key == "lumis":
+                new_weight =  "%s/%s"%(weight_dict['lumis'][lumi], weight_dict['lumis']["mc_lumi"])
+            else:
+                new_weight =  weight_dict[weight_key]
+            if new_weight:
+                weight_list.append(new_weight)
+        return weight_list
+
+    def combine(self, weight_dict=None, cut="default", lumi="target_lumi"):
+        if not weight_dict:
+            weight_dict = self.weight_dict
+        self.weight_list = self.getWeightList(weight_dict, cut, lumi)
+        return joinWeightList(self.weight_list) 
+
+
+
+
+def decide_weight2( sample, weight=None, cut="default" , lumi="target_lumi"):
+    if sample.isData:
+        weight_str = "(1)"
+        return weight_str
+    if not weight:
+        weight = sample.weights
+
+    if isinstance(weight,Weight):
+        weight_str = weight.combine(cut=cut, lumi=lumi)
+    else:
+        if "weight" in weight.lower():
+            if sample.has_key("weight"):
+                weight_str = sample['weight']
+            if weight.endswith("_weight"):
+                if sample.has_key(weight):
+                    weight_str = sample[weight]
+                    #print sample, weight_str, samples[sample]
+        else:
+            weight_str=weight
+    return weight_str
+
+
+
+def decide_weight( sample, weight ):
     if sample.isData:
         weight_str = "(1)"
         return weight_str
@@ -1440,6 +1531,22 @@ def decide_weight( sample, weight):
     else:
         weight_str=weight
     return weight_str
+
+
+
+
+
+#############################################################################################################
+##########################################                    ###############################################
+##########################################    YIELDS CLASS    ###############################################
+##########################################                    ###############################################
+#############################################################################################################
+
+
+
+
+
+
 
 
 class Yields():
@@ -1507,7 +1614,8 @@ class Yields():
         #self.sampleLegend   = np.array( [ [samples[sample]['name'] for sample in self.bkgList] + ["Total"] + 
         #                                                         [samples[sample]['name'] for sample in self.sigList] ] )
 
-        self.weights        = { samp:decide_weight(samples[samp] , self.weight    ) for samp in self.sampleList }
+        #self.weights        = { samp:decide_weight(samples[samp] , self.weight    ) for samp in self.sampleList }
+        self.weights        = { samp:decide_weight2(samples[samp] , cut=self.cutInst.name, lumi="target_lumi"    ) for samp in self.sampleList } # need to fix lumi for comparison with data
             
 
         if hasattr(self,"LatexTitles"):
@@ -1542,6 +1650,7 @@ class Yields():
             if not sorted(cuts) ==  sorted( list( self.cutLegend[0][1:] ) ) :
                 raise Exception("The new yield dictionary seems to have different cuts than the current one  %s \n vs. %s"%(cuts, sorted( list(self.cutLegend[0][1:]) ) ))
         self.yieldDict.update(yieldDict)
+        self.yieldDictFull.update(yieldDict)  ### FIX ME, should also combine Totals, FOMs, etc
 
     def makeNumpyFromDict(self, yieldDict=None,rowList=[]):
         """
@@ -1723,7 +1832,7 @@ class Yields():
         print ret
         return ret
 
-    def pprint(self, table=None, nSpaces=17, align="<", ret=None):
+    def pprint(self, table=None,transpose=True, nSpaces=17, align="<", ret=None):
         if table is None:
             table = self.FOMTable.T
         block = "| {:%s%s}"%(align,nSpaces)

@@ -16,7 +16,8 @@ import ROOT
 #pickleFiles = ["/afs/hephy.at/user/n/nrad/CMSSW/CMSSW_7_4_7/src/Workspace/DegenerateStopAnalysis/plotsNavid/analysis/pkl/SR1_r1_a.pkl"]
 
 
-def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, sys_corr = 1.06):
+def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, sys_corr = 1.06, calc_limit=False):
+#def makeLimitCardFromYield(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, sys_corr = 1.06, calc_limit=False):
     c = cardFileWriter()
     c.defWidth=40
     c.maxUncNameWidth=40
@@ -103,6 +104,160 @@ def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, s
     limits=c.calcLimit()
     #print cardName,   "median:  ", limits['0.500']
     return (c, limits)
+
+
+
+
+
+###################3333
+
+def makeLimitCardFromYield(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, sys_corr = 1.06, 
+                          calc_limit=False, sys_pkl=None, sys_card=None, debug=False):
+
+    if sys_pkl or sys_card:
+        raise NotImplementedError("Need to implement reading sys from pkl or another card")
+
+    c = cardFileWriter()
+    c.defWidth=40
+    c.maxUncNameWidth=40
+    c.maxUncStrWidth=40
+    c.precision=6
+    c.addUncertainty("Sys", 'lnN')
+
+    bins = yld.cutNames
+    bkgs = yld.bkgList
+    if not sig:
+        sig  = yld.sigList[0]
+    elif sig in yld.sigList:
+        pass
+    else:
+        assert False, "Signal %s not in the yield dictionary signal list:%s" %(sig, yld.sigList)
+
+    processNames = yld.sampleNames
+    processNames.update(  { 'signal':'signal'} )
+
+    for iBin, bin in enumerate(bins,1):
+        c.addBin(bin,[processNames[bkg] for bkg in bkgs],bin)
+        c.specifyObservation(bin,int( get_float(yld.yieldDictFull["Total"][bin]) ))
+        sysName = "Sys_%s"%(bin)
+        c.addUncertainty(sysName, 'lnN')
+        c.addUncertainty(sysName+"_sig", 'lnN')
+        for bkg in bkgs:
+          c.specifyExpectation(bin,processNames[bkg],get_float(yld.yieldDictFull[bkg][bin]))
+          c.specifyUncertainty('Sys',bin,processNames[bkg],sys_corr)
+          #sysName = "Sys_%s"%bkg
+          c.specifyUncertainty(sysName,bin,processNames[bkg],sys_uncorr)
+        c.specifyExpectation(bin,"signal",get_float(yld.yieldDictFull[sig][bin]))
+        c.specifyUncertainty(sysName+"_sig",bin,'signal',sys_uncorr)
+        #c.specifyUncertainty('Sys',bin,"signal",sys_corr)
+    badBins=[]
+
+    if debug:
+        #if True:
+        #  return c
+        print "--------debug-------------"
+        print c.bins
+        print c.processes
+        print c.expectation
+        print "--------debug-------------"
+
+    for bin in c.bins:
+        expectations = [c.expectation[( bin, process )] for process in c.processes[bin]] 
+        bkgExpectations = [ c.expectation[(bin,processNames[process])] for process in bkgs]
+        print bin, any(expectations), c.processes[bin], expectations
+        if not any(expectations):
+          print "############ no processes contributing to the bin %s, to make life easier the bin will be removed from card but make sure everything is ok"%bin
+          print bin, c.processes[bin], expectations   
+          badBins.append(bin)
+          #print c.bins
+        if not any(bkgExpectations):
+          print "############ no background contributing to the bin %s, a small non zero value (0.001) has been assigned to the bin"%bin
+          c.expectation[(bin,process[bkgs[0]])]=0.001
+          print bin, c.processes[bin], expectations   
+    for bin in badBins:
+        c.bins.remove(bin)
+    sigName  =  yld.sampleNames[sig]
+    filename =  sigName + "_" + yld.tableName
+    if postfix:
+        if not postfix.startswith("_"):
+            postfix = "_" + postfix
+        filename += postfix
+    
+    cardName='%s.txt'%filename
+    c.writeToFile('%s/%s'%(outDir,cardName))
+    print "Card Written To: %s/%s"%(outDir,cardName)
+    #limits=c.calcLimit("./output/%s"%cardName)
+
+    if calc_limit:
+        limits=c.calcLimit()
+    else:
+        limits={}
+    #print cardName,   "median:  ", limits['0.500']
+    return (c, limits)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

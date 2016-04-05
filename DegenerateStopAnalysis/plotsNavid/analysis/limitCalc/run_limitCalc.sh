@@ -30,12 +30,22 @@ cardDir="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/
 
 
 #cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/HT/2300pbm1_isrweight_v7_SR2Fixed3rdJetVeto_Bins/"
-cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/HT/2300pbm1_isrweight_v7_SR2Fixed3rdJetVeto/SysBins/"
+#cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/HT/2300pbm1_isrweight_v7_SR2Fixed3rdJetVeto/SysBins/"
+#cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/HT/2300pbm1_lepFix_v0/"
+#cardDirs="/afs/hephy.at/user/n/nrad/CMSSW/fork/CMSSW_7_4_12_patch4/src/Workspace/DegenerateStopAnalysis/plotsNavid/data/cards/13TeV/HT/2300pbm1_lepFix_v1/"
+#cardDirs="/data/nrad/results/cards_and_limits/13TeV/HT/2300pbm1_lepFix_v2/"
+#cardDirs="/data/nrad/results/cards_and_limits/13TeV/HT/2300pbm1_lepFix_v2/"
+#cardDirs="/data/nrad/results/cards_and_limits/13TeV/HT/2300pbm1_lepFix_v4_isrweight/"
+
+
+cardDirs=$1
 cardPattern="T2*4bd*.txt"
-for cardDir in `ls -d $cardDirs/*`
+
+for cardDir in `ls -d $cardDirs/FullSysBins/*`
     do 
     cardDirBase=`basename $cardDir`
-    ./calc_cards_limit.py  "$cardDir/$cardPattern"     "$cardDirs/$cardDirBase.pkl"  &
+    #echo ./calc_cards_limit.py  \"$cardDir/$cardPattern\"     \"$cardDirs/$cardDirBase.pkl\"  
+    echo ./calc_cards_limit.py  \"$cardDir/$cardPattern\"     \"$cardDirs/$cardDirBase.pkl\"  
     done
 
 #for cardDir in `ls -d $cardDirs/ALL`
