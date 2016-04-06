@@ -1518,6 +1518,7 @@ def computeWeight(sample, sumWeight,  splitTree, saveTree, params, xsec=None):
         else:
             xSection = xsec
         lumiScaleFactor = xSection * target_lumi / float(sumWeight)
+    print "========= LUMI FACTOR: ", sample['name'], xSection, sumWeight, target_lumi, lumiScaleFactor
         
     saveTree.weight = lumiScaleFactor * genWeight
     

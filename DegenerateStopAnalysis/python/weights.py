@@ -64,7 +64,7 @@ weightDict={
 
              "sigScan": {
                     "baseWeight": "weight",
-                    "isrWeight": isrWeight,
+                    #"isrWeight": isrWeight,
                    },
 
 

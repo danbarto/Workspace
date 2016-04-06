@@ -32,7 +32,7 @@ import plots
 #
 # Choosing the RunTag... should be a key of infos from plot_infos
 #
-runTagKey = "lepFix_v4"
+runTagKey = "lepFix_v4b"
 
 
 
@@ -48,10 +48,10 @@ ppTag  = info.ppTag
 saveDirBase = info.saveDirBase
 
 dos = {
-        "dataplots":    True,
-        "calclimit":    False,
-        "redo_limit":   False, 
-        "yields":       False,
+        "dataplots":    False,
+        "calclimit":    True,
+        "redo_limit":   True, 
+        "yields":       True,
        }
 
 
@@ -170,11 +170,11 @@ bins= {
 ROOT.gDirectory.cd("PyROOT:/")
 #tfile = ROOT.TFile("%s.root"%fullTag ,"recreate")      
 pp.pprint( {x:weights[x].weight_dict for x in weights} , open( saveDir+"/weights.txt" ,"w") ) 
+tfile = ROOT.TFile(saveDir+"/%s.root"%fullTag ,"recreate")      
 
 if dos['dataplots'] and process:
     shutil.copy( cuts.__file__.replace(".pyc",".py") , saveDir+"/cuts.py" )
     pp.pprint( samples, open( saveDir+"/samples.txt" ,"w") ) 
-    tfile = ROOT.TFile(saveDir+"/%s.root"%fullTag ,"recreate")      
     yields={}
     plts=[]
 
@@ -334,6 +334,11 @@ scanListForTable = samples.massScanList()
 
 if dos['calclimit'] and process:
 
+
+
+
+
+
     limits={}
     yields={}
 
@@ -373,8 +378,7 @@ if dos['calclimit'] and process:
         limitPkl = cardDirBase + "13TeV/%s/%s_%s/BasicSys.pkl"%(htString,lumiTag,runTag)
         makeDir(cardDir)
         
-        if os.path.isfile(limitPkl):
-            if not dos['redo_limit']:
+        if os.path.isfile(limitPkl) and not dos['redo_limit']:
                 limits = pickle.load( file(limitPkl) )
         else:
 
@@ -387,8 +391,7 @@ if dos['calclimit'] and process:
             #else
             #    yields[cutName]=Yields(samples, sampleList, runI, cutOpt="list2",weight="weight",pklOpt=True,tableName="{cut}_%s%s"%(runTag,scanTag),nDigits=2,err=True, verbose=True,nSpaces=10)
         
-            if os.path.isfile(yield_pkl):
-                if not dos['redo_limit']:
+            if os.path.isfile(yield_pkl) and not dos['redo_limit']:
                     print "reading Yields from pickle:%s"%yield_pkl
                     yields[cutName] = pickle.load(file(yield_pkl)) 
             else: 
