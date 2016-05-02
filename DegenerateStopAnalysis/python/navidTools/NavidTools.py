@@ -41,7 +41,7 @@ def setup_style():
 #############################################################################################################
 
 
-getAllAlph = lambda str: ''.join(ch for ch in str if ch not in "!>=|<$&@$%[]{}#()/; '\"")
+getAllAlph = lambda str: ''.join(ch for ch in str if ch not in ".!>=|<$&@$%[]{}#()/; '\"")
 addSquareSum = lambda x: math.sqrt(sum(( e**2 for e in x   )))
 
 def mkdir_p(path):
@@ -447,18 +447,24 @@ def getStackFromHists(histList,sName=None,scale=None, normalize=False, transpare
     stk.Add(h)
   return stk
 
-def getSamplePlots(samples,plots,cut,sampleList=[],plotList=[]):
+def getSamplePlots(samples,plots,cut,sampleList=[],plotList=[],plots_first = False):
     if not sampleList: sampleList= samples.keys()
     bkgList=[samp for samp in sampleList if not samples[samp]['isSignal'] and not samples[samp]['isData'] ]
     dataList = [samp for samp in sampleList if samples[samp]['isData'] ]
     sigList=[samp for samp in sampleList if samples[samp]['isSignal'] ]
     if not plotList: plotList=plots.keys()
     hists={}
-    for samp in sampleList:
-        hists[samp]={}
+
+    if plots_first:
         for p in plotList:
-            v = p
-            hists[samp][v]= samples[samp]['cuts'][cut.name][v]
+            hists[p]={}
+            for samp in sampleList:
+                hists[p][samp]= samples[samp]['cuts'][cut.name][p]
+    else:
+        for samp in sampleList:
+            hists[samp]={}
+            for p in plotList:
+                hists[samp][p]= samples[samp]['cuts'][cut.name][p]
     return hists
 
 
@@ -750,6 +756,61 @@ def drawPlots(samples,plots,cut,sampleList=['s','w'],plotList=[],plotMin=False, 
             #canvs[p][cSave].SaveAs(saveDir+"/%s.png"%p)
             saveCanvas(canvs[p][cSave],saveDir, p, formats=["png"], extraFormats=["root","C","pdf"])
     return ret
+
+
+
+
+class Draw():
+    """
+
+    FIXME:
+        needs these:
+            getStacks ( with bkg_tot, sig, data ) 
+            set pads
+            set legend
+            set limit
+            draw
+
+    """
+
+    def __init__(samples,plots,cut,sampleList=['s','w'],plot="lepPt",plotMin=False, plotLimits=[],logy=0,save=True,
+                                            fom=True, normalize=False,
+                                            denoms=None,noms=None, ratioNorm=False,  fomLimits=[],
+                                            leg=True,unity=True, verbose=False):
+
+            self.npads = 0
+
+
+    def setup_pads():
+        self.pad_ratios = [2] + [1]*(self.nPads-1)
+        self.canv_save, self.canv_main = (0,1)
+
+    def draw_main_plot():
+        self.canvs[self.canv_main].cd()
+        if self.dataList:
+            self.ref_hist = data_hist
+        elif self.bkgList:
+            self.ref_hist = self.stacks['bkg']
+        elif self.sigList:
+            self.ref_hist = self.stacks['sig']
+
+    def add_new_pad(pad_rel_size, what_to_plot ):
+            self.nPads +=1
+
+    def draw():
+            #get_pad_ratios
+            #makeMultiCanv
+            pass
+
+    def get_hists():
+        self.hists   = getSamplePlots(samples,plots,cut,sampleList=sampleList, plotList=[plotList])[plot]
+        self.stacks  = getBkgSigStacks(samples,plots,cut, sampleList=sampleList, plotList=plotList, normalize=normalize, transparency=normalize )
+        self.sigList, self.bkgList, self.dataList = getSigBkgDataLists(samples, sampleList=sampleList)
+
+    def get_weights():
+        pass
+
+
 
 
 

@@ -7,8 +7,9 @@ import pprint as pp
 #ROOT.gROOT.SetBatch(True)
 #sys.argv = oldargv
 
-from Workspace.DegenerateStopAnalysis.cuts.cuts import *
-import Workspace.DegenerateStopAnalysis.cuts.cuts as cuts  ## for copy purpose
+from Workspace.DegenerateStopAnalysis.cuts.mu import *
+import Workspace.DegenerateStopAnalysis.cuts.mu as cuts  
+import Workspace.DegenerateStopAnalysis.cuts.newSR as newSR 
 import shutil
 
 from Workspace.DegenerateStopAnalysis.navidTools.NavidTools import *
@@ -32,7 +33,7 @@ import plots
 #
 # Choosing the RunTag... should be a key of infos from plot_infos
 #
-runTagKey = "lepFix_v4"
+runTagKey = "newSR_DMTTrk_v0"
 
 
 
@@ -48,10 +49,11 @@ ppTag  = info.ppTag
 saveDirBase = info.saveDirBase
 
 dos = {
-        "dataplots":    True,
-        "calclimit":    False,
-        "redo_limit":   False, 
-        "yields":       False,
+        "dataplots":    False,
+        "calclimit":    True,
+        "redo_limit":   True,
+        "redo_yields":  True, 
+        "yields":       True,
        }
 
 
@@ -157,13 +159,13 @@ mcList = sigList + bkgList
 
 
 bins= {
-            "cr1a"      :   {"cut":cr1a      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": ["LepPt"] },
-            "cr1b"      :   {"cut":cr1b      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": ["LepPt"] },
-            "cr1c"      :   {"cut":cr1c      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": ["LepPt"] },
-            "crtt_"     :   {"cut":crtt2    ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": ["nBJets"] },
+            #"cr1a"      :   {"cut":cr1a      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": ["LepPt"] },
+            #"cr1b"      :   {"cut":cr1b      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": ["LepPt"] },
+            #"cr1c"      :   {"cut":cr1c      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": ["LepPt"] },
+            #"crtt_"     :   {"cut":crtt2    ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList":  ["nBJets"] },
 
 
-            "cr1"      :   {"cut":cr1      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": ["LepPt"] },
+            "cr1"      :   {"cut":cr1      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList":   plotList },
 
             "cr2"      :   {"cut":cr2      ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": plotList },
             "crtt"     :   {"cut":crtt2    ,  "opt":"list", "mcList":mcList, "data":"dblind"     , "plotList": plotList },
@@ -172,15 +174,18 @@ bins= {
             "sr2"      :   {"cut":sr2      ,  "opt":"list", "mcList":mcList, "data":"d"          , "plotList": plotList },
           }
 
-bins={x:bins[x] for x in bins if "cr1" in x}
+#bins={x:bins[x] for x in bins if "cr1" in x}
 #bins={x:bins[x] for x in bins if "crtt_" in x}
 
-killdata  = CutClass ("killdata",    [
-                               ["killdata", "asdf"],
-                           ] ,
-                  baseCut = None,
-                  )
-setEventListToChains(samples, ['dblind'] , killdata)
+
+killdata = False
+if killdata:
+    killdata  = CutClass ("killdata",    [
+                                   ["killdata", "asdf"],
+                               ] ,
+                      baseCut = None,
+                      )
+    setEventListToChains(samples, ['dblind'] , killdata)
 
 
 
@@ -193,8 +198,12 @@ ROOT.gDirectory.cd("PyROOT:/")
 pp.pprint( {x:weights[x].weight_dict for x in weights} , open( saveDir+"/weights.txt" ,"w") ) 
 tfile = ROOT.TFile(saveDir+"/%s.root"%fullTag ,"recreate")      
 
+#
+# Keep a copy of cuts.py for reference
+#
+shutil.copy( cuts.__file__.replace(".pyc",".py") , saveDir+"/cuts.py" )
+
 if dos['dataplots'] and process:
-    shutil.copy( cuts.__file__.replace(".pyc",".py") , saveDir+"/cuts.py" )
     pp.pprint( samples, open( saveDir+"/samples.txt" ,"w") ) 
     yields={}
     plts=[]
@@ -222,7 +231,13 @@ if dos['dataplots'] and process:
         print "----------"
         #[samples[samp].tree.SetEventList(0) for samp in samples]
         #setEventListToChains(samples, sampleList ,cutInst.baseCut)
-        setEventListToChains(samples, mcList ,cutInst.baseCut.baseCut)
+        baseCut = None
+        if hasattr( cutInst, "baseCut"):
+            baseCut = cutInst.baseCut
+            if hasattr( cutInst.baseCut, "baseCut"):
+                baseCut = cutInst.baseCut.baseCut 
+
+        setEventListToChains(samples, mcList,  baseCut )
         #setEventListToChains(samples, ['dblind'] , cutInst)
         for plot in plotList:
             if nminus1s.has_key(plot) and len(nminus1s[plot]) and nminus1s[plot][0]:
@@ -244,97 +259,10 @@ if dos['dataplots'] and process:
         b = bins[bname]
         plts_dict[bname] = getAndDrawFull( b['cut'], b['mcList'], b['data'], b['plotList'] )
 
-
-
-
-
-    #cutInst = cr1
-    #sampleList = crSampleList
-    #setEventListToChains(samples,sampleList, cutInst)
-    #
-    #plt_cr1 = getAndDrawFull(cutInst, cr
-
-
-
-    #plts.append(pl_cr1)
-
-    #
-
-    #cutInst = cr2
-    #sampleList = crSampleList
-
-    #setEventListToChains(samples,sampleList,cutInst)
-    #getPlots(samples, plots.plots , cutInst , sampleList= sampleList , plotList=plotListCR , addOverFlowBin='both',weight="weight"  )
-    #pl_cr2 = drawPlots(samples,    plots.plots , cutInst, sampleList= [ "z","qcd","w","tt"]+sigList+[ "dblind"],
-    #                plotList= plotListCR ,save=plotDir, plotMin=0.01,
-    #                normalize=False, denoms=["bkg"], noms=["dblind"], fom="RATIO", fomLimits=fomLimits)
-
-    #plts.append(pl_cr2)
-
-
-
-
-    #cutInst = crtt2
-    #sampleList = crSampleList
-    #setEventListToChains(samples,sampleList ,cutInst)
-    #getPlots(samples, plots.plots , cutInst , sampleList= sampleList , plotList=plotListCR , addOverFlowBin='both',weight="weight"  )
-    #pl_crtt2 = drawPlots(samples,    plots.plots , cutInst, sampleList= [ "z","qcd","w","tt"]+ sigList + ["dblind"],
-    #                plotList= plotListCR ,save=plotDir, plotMin=0.01,
-    #                normalize=False, denoms=["bkg"], noms=["dblind"], fom="RATIO", fomLimits=fomLimits)
-    #plts.append(pl_crtt2)
-
-    #cutInst = presel
-    #sampleList = srSampleList
-    #setEventListToChains(samples, sampleList, cutInst)
-    #getPlots(samples, plots.plots , cutInst  , sampleList= sampleList   , plotList=plotListSR , addOverFlowBin='both',weight="weight"  )
-    #pl_presel = drawPlots(samples,    plots.plots , cutInst, sampleList= sampleList,
-    #                plotList= plotListSR ,save=plotDir, plotMin=0.001,
-    #                normalize=False, denoms=["bkg"], noms=["d"], fom="RATIO", fomLimits=fomLimits)
-    #plts.append(pl_presel)
-
-    #cutInst = sr1
-    #sampleList = srSampleList
-    #setEventListToChains(samples, sampleList ,cutInst)
-    #getPlots(samples, plots.plots , cutInst  , sampleList= sampleList    , plotList=plotListSR , addOverFlowBin='both',weight="weight"  )
-    #pl_sr1 = drawPlots(samples,    plots.plots , cutInst, sampleList= sampleList,
-    #                plotList= plotListSR ,save=plotDir, plotMin=0.001,
-    #                normalize=False, denoms=["bkg"], noms=["d"], fom="RATIO", fomLimits=fomLimits)
-    #plts.append(pl_sr1)
-
-    #cutInst = sr2
-    #sampleList = srSampleList
-    #setEventListToChains(samples, sampleList ,cutInst)
-    #getPlots(samples, plots.plots , cutInst  , sampleList=sampleList      , plotList=plotListSR , addOverFlowBin='both',weight="weight"  )
-    #setEventListToChains(samples, sampleList ,presel)
-    #getPlots(samples, plots.plots , cutInst  , sampleList=sampleList     , nMinus1="B" ,plotList=["nBJets","nSoftBJets","nHardBJets"] , addOverFlowBin='both',weight="weight"  )
-    #pl_sr2 = drawPlots(samples,    plots.plots , cutInst, sampleList= ["z", 'qcd',"w",'tt'] +sigList+["d"],
-    #                plotList= plotListSR ,save=plotDir, plotMin=0.001,
-    #                normalize=False, denoms=["bkg"], noms=["d"], fom="RATIO", fomLimits=fomLimits)
-    #plts.append(pl_sr2)
-
-
-
-
-
-
-
     for pl in plts_dict:
         saveDrawOutputToFile(plts_dict[pl], tfile)
 
 
-
-
-
-
-
-
-
-
-
-
-
-    #tfile.Write()
-    #tfile.Close()
 
 tableDir=saveDir+"/Tables/"
 makeDir(tableDir)
@@ -342,12 +270,14 @@ makeDir(tableDir)
 #    os.mkdir(tableDir)
 
 cutInsts= {
-            "runI"      :   {"cut":runI      ,  "opt":"list"},
+            "runI"      :    {"cut":runI      ,  "opt":"list"},
+            "runII"      :   {"cut":newSR.runII      ,  "opt":"list"},
+            "runIITrk"      :   {"cut":newSR.runII     ,  "opt":"list"},
           }
 
 
 
-cutInstStr="runI"
+cutInstStr="runIITrk"
 cutInst = cutInsts[cutInstStr]['cut']
 cutOpt = cutInsts[cutInstStr]['opt']
 
@@ -358,25 +288,14 @@ scanListForTable = samples.massScanList()
 
 if dos['calclimit'] and process:
 
-
-
-
-
-
     limits={}
     yields={}
-
 
     sampleList = scanListForTable  + bkgListForTable + sigListForTable
 
     print sampleList
-    
-
     print "Getting Yields"
-    cutName = "runI_%s"%htString
-    runI.name = runI.name + "_" + htString
-
-
+    cutName = "runII_%s"%htString
 
 
     if doscan:
@@ -408,19 +327,19 @@ if dos['calclimit'] and process:
 
 
             #yield_pkl = "YieldInstance_{cut}_%s%s.pkl"%(runTag,scanTag)
-            yield_pkl = "./pkl/YieldInstance_%s_%s%s.pkl"%(runI.name, runTag,scanTag)
+            yield_pkl = "./pkl/YieldInstance_%s_%s%s.pkl"%(cutInst.name, runTag,scanTag)
 
             #if os.path.isfile( yield_pkl ) and not dos['redo_limit']:
             #    yields[cutName]= pickle.load( yield_pkl )
             #else
             #    yields[cutName]=Yields(samples, sampleList, runI, cutOpt="list2",weight="weight",pklOpt=True,tableName="{cut}_%s%s"%(runTag,scanTag),nDigits=2,err=True, verbose=True,nSpaces=10)
         
-            if os.path.isfile(yield_pkl) and not dos['redo_limit']:
+            if os.path.isfile(yield_pkl) and not dos['redo_yields']:
                     print "reading Yields from pickle:%s"%yield_pkl
                     yields[cutName] = pickle.load(file(yield_pkl)) 
             else: 
                 setEventListToChains(samples,sampleList,presel)
-                yields[cutName]=Yields(samples, sampleList, runI, cutOpt="list2",weight="weight",pklOpt=True,tableName="{cut}_%s%s"%(runTag,scanTag),nDigits=2,err=True, verbose=True,nSpaces=10)
+                yields[cutName]=Yields(samples, sampleList, cutInst, cutOpt="list2",weight="weight",pklOpt=True,tableName="{cut}_%s%s"%(runTag,scanTag),nDigits=2,err=True, verbose=True,nSpaces=10)
         
 
             JinjaTexTable(yields[cutName],pdfDir=tableDir, caption="" , transpose=True)
@@ -453,9 +372,9 @@ if dos['yields'] and process: # and process
 
     sigForTable = ['s275_265']
     samplesForTableShort = bkgListForTable + sigForTable
-    ylds_runI = Yields(samples, samplesForTableShort , runI, cutOpt="list2",weight="weight",pklOpt=True,tableName="{cut}_%s%s_%s"%(runTag,scanTag, "_".join(sigForTable) ),nDigits=2,err=True, verbose=True,nSpaces=10)
-    JinjaTexTable(ylds_runI, pdfDir=tableDir, outputName="RunIBins" , transpose=False)
-    JinjaTexTable(ylds_runI, pdfDir=tableDir, outputName="RunIBins_T" , transpose=True)
+    ylds_runII = Yields(samples, samplesForTableShort , cutInst, cutOpt="list2",weight="weight",pklOpt=True,tableName="{cut}_%s%s_%s"%(runTag,scanTag, "_".join(sigForTable) ),nDigits=2,err=True, verbose=True,nSpaces=10)
+    JinjaTexTable(ylds_runII, pdfDir=tableDir, outputName="RunIBins" , transpose=False)
+    JinjaTexTable(ylds_runII, pdfDir=tableDir, outputName="RunIBins_T" , transpose=True)
 
 
     ylds_presel = Yields(samples, samplesForTable, presel, cutOpt='flow', nSpaces=5, pklOpt=True, verbose=True) 
@@ -464,9 +383,9 @@ if dos['yields'] and process: # and process
     JinjaTexTable(ylds_sr2, pdfDir=tableDir, outputName="" , transpose=True)
     ylds_sr1 = Yields(samples, samplesForTable, sr1, cutOpt='flow', nSpaces=5, pklOpt=True, verbose=True)
     JinjaTexTable(ylds_sr1, pdfDir=tableDir, outputName="" , transpose=True)
-    ylds_runIFlow = Yields(samples, samplesForTable, runIflow, cutOpt='inclList', nSpaces=5, pklOpt=True, verbose=True) 
-    JinjaTexTable(ylds_runIFlow, pdfDir=tableDir, outputName="" , transpose=False)
-    JinjaTexTable(ylds_runIFlow, pdfDir=tableDir, outputName="ReloadCutFlow" , transpose=True)
+    ylds_runIIFlow = Yields(samples, samplesForTable, newSR.runIIflow, cutOpt='inclList', nSpaces=5, pklOpt=True, verbose=True) 
+    JinjaTexTable(ylds_runIIFlow, pdfDir=tableDir, outputName="" , transpose=False)
+    JinjaTexTable(ylds_runIIFlow, pdfDir=tableDir, outputName="ReloadCutFlow" , transpose=True)
 
 
 #sampleList=['w','tt','s300_250']

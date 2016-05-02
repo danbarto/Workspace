@@ -41,14 +41,14 @@ sampleSets = {
                 'wjets':{
                             'samples':[
                                          "WJetsToLNu",             
-                                         "WJetsToLNu_HT100to200",  
-                                         "WJetsToLNu_HT200to400",  
-                                         "WJetsToLNu_HT400to600",  
-                                         "WJetsToLNu_HT600toInf",  
+                                         #"WJetsToLNu_HT100to200",  
+                                         #"WJetsToLNu_HT200to400",  
+                                         #"WJetsToLNu_HT400to600",  
+                                         #"WJetsToLNu_HT600toInf",  
                                          "WJetsToLNu_HT600to800",  
-                                         "WJetsToLNu_HT800to1200", 
-                                         "WJetsToLNu_HT1200to2500",
-                                         "WJetsToLNu_HT2500toInf", 
+                                         #"WJetsToLNu_HT800to1200", 
+                                         #"WJetsToLNu_HT1200to2500",
+                                         #"WJetsToLNu_HT2500toInf", 
                                         ],
                              
                             },
@@ -65,12 +65,21 @@ sampleSets = {
                             },
                 'dyjets':{
                             'samples':[
-                                         "DYJetsToLL_M5to50_LO",
-                                         "DYJetsToNuNu_M50",
-                                         "DYJetsToLL_M5to50_HT100to200",
-                                         "DYJetsToLL_M5to50_HT200to400",
-                                         "DYJetsToLL_M5to50_HT400to600",
-                                         "DYJetsToLL_M5to50_HT600toInf",
+                                         #"DYJetsToLL_M5to50_LO",
+                                         #"DYJetsToNuNu_M50",
+                                         #"DYJetsToLL_M5to50_HT100to200",
+                                         #"DYJetsToLL_M5to50_HT200to400",
+                                         #"DYJetsToLL_M5to50_HT400to600",
+                                         #"DYJetsToLL_M5to50_HT600toInf",
+                                        
+
+                                          'DYJetsToLL_M50_HT100to200',
+                                          'DYJetsToLL_M50_HT200to400',
+                                          'DYJetsToLL_M50_HT400to600',
+                                          'DYJetsToLL_M50_HT600toInf',
+
+
+
                                         ],
                             },
                 'zjets':{
@@ -86,7 +95,6 @@ sampleSets = {
                             },
                 'qcd':{
                             'samples':[
-
                                         "QCD_HT200to300", 
                                         "QCD_HT300to500",  
                                         "QCD_HT500to700",  
@@ -94,9 +102,29 @@ sampleSets = {
                                         "QCD_HT1000to1500",
                                         "QCD_HT1500to2000",
                                         "QCD_HT2000toInf", 
- 
                                         ],
                              
+                            },
+                'qcdpt':{
+                            'samples':[
+                                        #"QCD_Pt5to10",
+                                        #"QCD_Pt10to15",
+                                        "QCD_Pt15to30",
+                                        "QCD_Pt30to50",
+                                        "QCD_Pt50to80",
+                                        "QCD_Pt80to120",
+                                        "QCD_Pt120to170",
+                                        "QCD_Pt170to300",
+                                        "QCD_Pt300to470",
+                                        "QCD_Pt470to600",
+                                        "QCD_Pt600to800",
+                                        "QCD_Pt800to1000",
+                                        "QCD_Pt1000to1400",
+                                        "QCD_Pt1400to1800",
+                                        "QCD_Pt1800to2400",
+                                        "QCD_Pt2400to3200",
+                                        #"QCD_Pt3200toInf",
+                                      ],
                             },
                 'data':{
                             'samples':[
@@ -448,7 +476,7 @@ def get_parser():
     argParser.add_argument('-np','--numberOfProcesses',
         action='store',
         type=int,
-        default='5',
+        default='8',
         help="Number of processes to run in parallel"
         )
 
@@ -524,7 +552,7 @@ if __name__ == '__main__':
         pp.pprint(sampleSets[args.sampleSet])
         
 
-        args.preselect=True
+        #args.preselect=True
         command_default = make_default_command(args)
         commands = make_command(args.sampleSet, command_default)
         

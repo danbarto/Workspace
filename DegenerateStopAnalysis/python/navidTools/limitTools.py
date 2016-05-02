@@ -42,7 +42,7 @@ def getValueFromDict(x, val="0.500", default=999):
     #    raise Exception("cannot find value %s in  %s"%(val, x))
     return float(ret)
 
-def drawExpectedLimit( limitDict, plotDir, bins=None, key=None , title=""):
+def drawExpectedLimit( limitDict, plotDir, bins=None, key=None , title="", csize=(1500,1026) ):
     saveDir = plotDir
     
     if type(limitDict)==type({}):
@@ -76,7 +76,7 @@ def drawExpectedLimit( limitDict, plotDir, bins=None, key=None , title=""):
     #output_name = os.path.splitext(os.path.basename(limit_pickle))[0]+".png"
     
     #c1 = ROOT.TCanvas("c1","c1",1910,1070)
-    c1 = ROOT.TCanvas("c1","c1",1500,1026)
+    c1 = ROOT.TCanvas("c1","c1",*csize)
     plot.Draw("COL TEXT")
     if title:
         ltitle = ROOT.TLatex()
@@ -90,9 +90,9 @@ def drawExpectedLimit( limitDict, plotDir, bins=None, key=None , title=""):
     #c1.SaveAs("/afs/hephy.at/user/n/nrad/www/T2Deg13TeV/mAODv2_7412pass2/reload_scan_isrweight/%s"%output_name)
     if plotDir:
         c1.SaveAs(plotDir)
-        return c1,plot
-    else:
-        return c1,plot
+    #    return c1,plot
+    #else:
+    return c1,plot
 
 
 

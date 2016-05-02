@@ -17,7 +17,15 @@ plots =Plots(**
 
 
 
+#region names:
+rnames = [
+            'DMTa',    #  r1    ##  High MT Region 
+            'DMTd',    #  r2    ##  High CosPhiLMet Region (  )
+            'DMTc',    #  r3    ##  Low MT Region
+            'DMTb',    #  rej   ##  W Peak
 
+
+          ]
 
 
 
@@ -26,14 +34,14 @@ plots =Plots(**
 xvar="CosLMet"
 yvar="Q80"
 
-r1= ROOT.TCutG("r1",3) ##high mt region
+r1= ROOT.TCutG(rnames[0],3) ##high mt region
 r1.SetVarX(xvar)
 r1.SetVarY(yvar)
 r1.SetPoint(0,-1,1)
 r1.SetPoint(1,1,1)
 r1.SetPoint(2,-1,-1)
 
-r2= ROOT.TCutG("r2",5) ## lower mt region
+r2= ROOT.TCutG(rnames[1],5) ## lower mt region
 r2.SetVarX(xvar)
 r2.SetVarY(yvar)
 r2.SetPoint(0,-1,-1)
@@ -44,7 +52,7 @@ r2.SetPoint(4,-1,-10)
 r2.SetPoint(5,-1,-1)
 
 
-r3= ROOT.TCutG("r3",4) ## cos=1 
+r3= ROOT.TCutG(rnames[2],4) ## cos=1 
 r3.SetVarX(xvar)
 r3.SetVarY(yvar)
 r3.SetPoint(0,1,1)
@@ -124,84 +132,84 @@ class R3():
 class QCosRegion():
   def __init__(self,name,(r1m,r1b), (r2m1,r2m2,r2cx,r2cy), (r3l,r3t,r3tr), x=xvar, y =yvar , baseCut=sr1Loose):
     self.name = name
-    self.r1 = R1("r1"+name, r1m, r1b )
-    self.r2 = R2("r2"+name, r2m1,r2m2,r2cx,r2cy , r3l )
-    self.r3 = R3("r3"+name, r3l, r3t, r3tr   )
+    self.r1 = R1(rnames[0]+name, r1m, r1b )
+    self.r2 = R2(rnames[1]+name, r2m1,r2m2,r2cx,r2cy , r3l )
+    self.r3 = R3(rnames[2]+name, r3l, r3t, r3tr   )
     self.r1cut = "({r1} )".format(r1=self.r1.name)
     self.r2cut = "({r2} && ! ( {r1} ))".format(r1=self.r1.name,r2=self.r2.name)
     self.r3cut = "({r3} && ! ( {r1} || {r2}) )".format(r1=self.r1.name,r2=self.r2.name,r3=self.r3.name)
     self.rej   = "(!({r1} ||  {r2} || {r3} ) )".format(r1=self.r1.name,r2=self.r2.name,r3=self.r3.name)
     self.all   = "({r1} ||  {r2} || {r3} )".format(r1=self.r1.name,r2=self.r2.name,r3=self.r3.name)
     self.cut = CutClass(name,  [
-                            ["r1",self.r1cut],
-                            ["r2",self.r2cut],
-                            ["r3",self.r3cut],
-                            ["rejected",self.rej],
+                            [rnames[0],self.r1cut],
+                            [rnames[1],self.r2cut],
+                            [rnames[2],self.r3cut],
+                            [rnames[3]+"ected",self.rej],
                              ],
                           baseCut= baseCut     
                         )
     self.cut1 = CutClass(name+"_R1",  [
-                            ["r1",self.r1cut],
+                            [rnames[0],self.r1cut],
                              ],
                           baseCut= baseCut     
                         )
     self.cut2 = CutClass(name+"_R2",  [
-                            ["r2",self.r2cut],
+                            [rnames[1],self.r2cut],
                              ],
                           baseCut= baseCut     
                         )
     self.cut3 = CutClass(name+"_R3",  [
-                            ["r3",self.r3cut],
+                            [rnames[2],self.r3cut],
                              ],
                           baseCut= baseCut     
                         )
     self.cutRej = CutClass(name+"_Rej",  [
-                            ["rej",self.rej],
+                            [rnames[3],self.rej],
                              ],
                           baseCut= baseCut     
                         )
     self.cut_ptbin = CutClass(name,  [
-                            #["r1",self.r1cut],
-                                  ["r1_pt1",     "(%s && %s)"%(self.r1cut,  btw("lepPt",5,12)  )],
-                                  ["r1_pt2",     "(%s && %s)"%(self.r1cut,  btw("lepPt",12,20)  )],
-                                  ["r1_pt3",     "(%s && %s)"%(self.r1cut,  btw("lepPt",20,30)  )],
-                            #["r2",self.r2cut],
-                                  ["r2_pt1",     "(%s && %s)"%(self.r2cut,  btw("lepPt",5,12)  )],
-                                  ["r2_pt2",     "(%s && %s)"%(self.r2cut,  btw("lepPt",12,20)  )],
-                                  ["r2_pt3",     "(%s && %s)"%(self.r2cut,  btw("lepPt",20,30)  )],
-                            #["r3",self.r3cut],
-                                  ["r3_pt1",     "(%s && %s)"%(self.r3cut,  btw("lepPt",5,12)  )],
-                                  ["r3_pt2",     "(%s && %s)"%(self.r3cut,  btw("lepPt",12,20)  )],
-                                  ["r3_pt3",     "(%s && %s)"%(self.r3cut,  btw("lepPt",20,30)  )],
-                            #["rejected",self.rej],
-                                  ["rej_pt1",     "(%s && %s)"%(self.rej,  btw("lepPt",5,12)  )],
-                                  ["rej_pt2",     "(%s && %s)"%(self.rej,  btw("lepPt",12,20)  )],
-                                  ["rej_pt3",     "(%s && %s)"%(self.rej,  btw("lepPt",20,30)  )],
+                            #[rnames[0],self.r1cut],
+                                  [rnames[0]+"_pt1",     "(%s && %s)"%(self.r1cut,  btw("lepPt",5,12)  )],
+                                  [rnames[0]+"_pt2",     "(%s && %s)"%(self.r1cut,  btw("lepPt",12,20)  )],
+                                  [rnames[0]+"_pt3",     "(%s && %s)"%(self.r1cut,  btw("lepPt",20,30)  )],
+                            #[rnames[1],self.r2cut],
+                                  [rnames[1]+"_pt1",     "(%s && %s)"%(self.r2cut,  btw("lepPt",5,12)  )],
+                                  [rnames[1]+"_pt2",     "(%s && %s)"%(self.r2cut,  btw("lepPt",12,20)  )],
+                                  [rnames[1]+"_pt3",     "(%s && %s)"%(self.r2cut,  btw("lepPt",20,30)  )],
+                            #[rnames[2],self.r3cut],
+                                  [rnames[2]+"_pt1",     "(%s && %s)"%(self.r3cut,  btw("lepPt",5,12)  )],
+                                  [rnames[2]+"_pt2",     "(%s && %s)"%(self.r3cut,  btw("lepPt",12,20)  )],
+                                  [rnames[2]+"_pt3",     "(%s && %s)"%(self.r3cut,  btw("lepPt",20,30)  )],
+                            #[rnames[3]+"ected",self.rej],
+                                  [rnames[3]+"_pt1",     "(%s && %s)"%(self.rej,  btw("lepPt",5,12)  )],
+                                  [rnames[3]+"_pt2",     "(%s && %s)"%(self.rej,  btw("lepPt",12,20)  )],
+                                  [rnames[3]+"_pt3",     "(%s && %s)"%(self.rej,  btw("lepPt",20,30)  )],
                              ],
                           baseCut= baseCut     
                         )
 
     self.cut1_ptbin = CutClass(name,  [
-                            #["r1",self.r1cut],
-                                  ["r1_pt1",     "(%s && %s)"%(self.r1cut,  btw("lepPt",5,12)  )],
-                                  ["r1_pt2",     "(%s && %s)"%(self.r1cut,  btw("lepPt",12,20)  )],
-                                  ["r1_pt3",     "(%s && %s)"%(self.r1cut,  btw("lepPt",20,30)  )],
+                            #[rnames[0],self.r1cut],
+                                  [rnames[0]+"_pt1",     "(%s && %s)"%(self.r1cut,  btw("lepPt",5,12)  )],
+                                  [rnames[0]+"_pt2",     "(%s && %s)"%(self.r1cut,  btw("lepPt",12,20)  )],
+                                  [rnames[0]+"_pt3",     "(%s && %s)"%(self.r1cut,  btw("lepPt",20,30)  )],
                              ],
                           baseCut= baseCut     
                         )
     self.cut2_ptbin = CutClass(name,  [
-                            #["r2",self.r2cut],
-                                  ["r2_pt1",     "(%s && %s)"%(self.r2cut,  btw("lepPt",5,12)  )],
-                                  ["r2_pt2",     "(%s && %s)"%(self.r2cut,  btw("lepPt",12,20)  )],
-                                  ["r2_pt3",     "(%s && %s)"%(self.r2cut,  btw("lepPt",20,30)  )],
+                            #[rnames[1],self.r2cut],
+                                  [rnames[1]+"_pt1",     "(%s && %s)"%(self.r2cut,  btw("lepPt",5,12)  )],
+                                  [rnames[1]+"_pt2",     "(%s && %s)"%(self.r2cut,  btw("lepPt",12,20)  )],
+                                  [rnames[1]+"_pt3",     "(%s && %s)"%(self.r2cut,  btw("lepPt",20,30)  )],
                              ],
                           baseCut= baseCut     
                         )
     self.cut3_ptbin = CutClass(name,  [
-                            #["r3",self.r3cut],
-                                  ["r3_pt1",     "(%s && %s)"%(self.r3cut,  btw("lepPt",5,12)  )],
-                                  ["r3_pt2",     "(%s && %s)"%(self.r3cut,  btw("lepPt",12,20)  )],
-                                  ["r3_pt3",     "(%s && %s)"%(self.r3cut,  btw("lepPt",20,30)  )],
+                            #[rnames[2],self.r3cut],
+                                  [rnames[2]+"_pt1",     "(%s && %s)"%(self.r3cut,  btw("lepPt",5,12)  )],
+                                  [rnames[2]+"_pt2",     "(%s && %s)"%(self.r3cut,  btw("lepPt",12,20)  )],
+                                  [rnames[2]+"_pt3",     "(%s && %s)"%(self.r3cut,  btw("lepPt",20,30)  )],
                              ],
                           baseCut= baseCut     
                         )
@@ -251,86 +259,86 @@ r2def = r2bm1
 r3def = r3bm1
 
 r1_regions = [
-              #["r1_1p0_m1p0"  , r1def ,       r2def           , r3def      ],
-              ["r1_1p0_m0p8",  (1,-.8),       r2def  , r3def    ],
-              ["r1_1p0_m0p7",  (1,-0.7),      r2def  , r3def    ],
-              ["r1_1p0_m0p5",  (1,-0.5),      r2def  , r3def    ],
-              ["r1_1p0_m1p2",  (1,-1.2),      r2def  , r3def    ],
-              ["r1_1p0_m0p3",  (1,-0.3),       r2def  , r3def    ],
+              #[rnames[0]+"_1p0_m1p0"  , r1def ,       r2def           , r3def      ],
+              [rnames[0]+"_1p0_m0p8",  (1,-.8),       r2def  , r3def    ],
+              [rnames[0]+"_1p0_m0p7",  (1,-0.7),      r2def  , r3def    ],
+              [rnames[0]+"_1p0_m0p5",  (1,-0.5),      r2def  , r3def    ],
+              [rnames[0]+"_1p0_m1p2",  (1,-1.2),      r2def  , r3def    ],
+              [rnames[0]+"_1p0_m0p3",  (1,-0.3),       r2def  , r3def    ],
 
-              ["r1_1p1_m0p5",  (1.1,-.5 ),   r2def   , r3def   ],
-              ["r1_1p2_m0p5",  (1.2,-.5  ),  r2def   , r3def   ],
-              ["r1_0p9_m0p5",  (0.9,-0.5 ),  r2def   , r3def   ],
-              ["r1_0p8_m0p5",  (0.8,-0.5),   r2def   , r3def   ],
+              [rnames[0]+"_1p1_m0p5",  (1.1,-.5 ),   r2def   , r3def   ],
+              [rnames[0]+"_1p2_m0p5",  (1.2,-.5  ),  r2def   , r3def   ],
+              [rnames[0]+"_0p9_m0p5",  (0.9,-0.5 ),  r2def   , r3def   ],
+              [rnames[0]+"_0p8_m0p5",  (0.8,-0.5),   r2def   , r3def   ],
 
-              ["r1_1p1_m0p3",  (1.1,-0.3 ),  r2def   , r3def   ],
-              ["r1_1p2_m0p3",  (1.2,-0.3  ), r2def   , r3def   ],
-              ["r1_0p9_m0p3",  (0.9,-0.3 ),  r2def   , r3def   ],
-              ["r1_0p8_m0p3",  (0.8,-0.3),   r2def   , r3def   ],
+              [rnames[0]+"_1p1_m0p3",  (1.1,-0.3 ),  r2def   , r3def   ],
+              [rnames[0]+"_1p2_m0p3",  (1.2,-0.3  ), r2def   , r3def   ],
+              [rnames[0]+"_0p9_m0p3",  (0.9,-0.3 ),  r2def   , r3def   ],
+              [rnames[0]+"_0p8_m0p3",  (0.8,-0.3),   r2def   , r3def   ],
 
-              ["r1_1p1_m0p7",  (1.1,-0.7 ),  r2def   , r3def   ],
-              ["r1_1p2_m0p7",  (1.2,-0.7  ), r2def   , r3def   ],
-              ["r1_0p9_m0p7",  (0.9,-0.7 ),  r2def   , r3def   ],
-              ["r1_0p8_m0p7",  (0.8,-0.7),   r2def   , r3def   ],
+              [rnames[0]+"_1p1_m0p7",  (1.1,-0.7 ),  r2def   , r3def   ],
+              [rnames[0]+"_1p2_m0p7",  (1.2,-0.7  ), r2def   , r3def   ],
+              [rnames[0]+"_0p9_m0p7",  (0.9,-0.7 ),  r2def   , r3def   ],
+              [rnames[0]+"_0p8_m0p7",  (0.8,-0.7),   r2def   , r3def   ],
           ]
 
 
 r2_regions = [
-              ["r2_1p0_0p8_0p8"  , r1bm1 ,  (1,-1000,0.8,0.8)  , r3def      ],
-              ["r2_1p0_0p8_0p5"  , r1bm1 ,  (1,-1000,0.8,0.5)  , r3def      ],
-              ["r2_1p0_0p8_0p3"  , r1bm1 ,  (1,-1000,0.8,0.3)  , r3def      ],
-              ["r2_1p0_0p8_0p0"  , r1bm1 ,  (1,-1000,0.8,0.0)  , r3def      ],
+              [rnames[1]+"_1p0_0p8_0p8"  , r1bm1 ,  (1,-1000,0.8,0.8)  , r3def      ],
+              [rnames[1]+"_1p0_0p8_0p5"  , r1bm1 ,  (1,-1000,0.8,0.5)  , r3def      ],
+              [rnames[1]+"_1p0_0p8_0p3"  , r1bm1 ,  (1,-1000,0.8,0.3)  , r3def      ],
+              [rnames[1]+"_1p0_0p8_0p0"  , r1bm1 ,  (1,-1000,0.8,0.0)  , r3def      ],
 
-              ["r2_1p2_0p8_0p8"  , r1bm1 ,  (1.2,-1000,0.8,0.8)  , r3def      ],
-              ["r2_1p2_0p8_0p5"  , r1bm1 ,  (1.2,-1000,0.8,0.5)  , r3def      ],
-              ["r2_1p2_0p8_0p3"  , r1bm1 ,  (1.2,-1000,0.8,0.3)  , r3def      ],
-              ["r2_1p2_0p8_0p0"  , r1bm1 ,  (1.2,-1000,0.8,0.0)  , r3def      ],
+              [rnames[1]+"_1p2_0p8_0p8"  , r1bm1 ,  (1.2,-1000,0.8,0.8)  , r3def      ],
+              [rnames[1]+"_1p2_0p8_0p5"  , r1bm1 ,  (1.2,-1000,0.8,0.5)  , r3def      ],
+              [rnames[1]+"_1p2_0p8_0p3"  , r1bm1 ,  (1.2,-1000,0.8,0.3)  , r3def      ],
+              [rnames[1]+"_1p2_0p8_0p0"  , r1bm1 ,  (1.2,-1000,0.8,0.0)  , r3def      ],
 
 
-              ["r2_0p9_0p8_0p8"  , r1bm1 ,  (0.9,-1000,0.8,0.8)  , r3def      ],
-              ["r2_0p9_0p8_0p5"  , r1bm1 ,  (0.9,-1000,0.8,0.5)  , r3def      ],
-              ["r2_0p9_0p8_0p3"  , r1bm1 ,  (0.9,-1000,0.8,0.3)  , r3def      ],
-              ["r2_0p9_0p8_0p0"  , r1bm1 ,  (0.9,-1000,0.8,0.0)  , r3def      ],
+              [rnames[1]+"_0p9_0p8_0p8"  , r1bm1 ,  (0.9,-1000,0.8,0.8)  , r3def      ],
+              [rnames[1]+"_0p9_0p8_0p5"  , r1bm1 ,  (0.9,-1000,0.8,0.5)  , r3def      ],
+              [rnames[1]+"_0p9_0p8_0p3"  , r1bm1 ,  (0.9,-1000,0.8,0.3)  , r3def      ],
+              [rnames[1]+"_0p9_0p8_0p0"  , r1bm1 ,  (0.9,-1000,0.8,0.0)  , r3def      ],
              ]
 
 
 r3_regions = [
-              ["r3_0p8_0p8_1p0"  , r1bm1 ,  r2bm1  , (0.8,0.8,1)      ],
-              ["r3_0p8_0p5_1p0"  , r1bm1 ,  r2bm1  , (0.8,0.5,1)      ],
-              ["r3_0p8_0p3_1p0"  , r1bm1 ,  r2bm1  , (0.8,0.3,1)      ],
-              ["r3_0p8_0p0_1p0"  , r1bm1 ,  r2bm1  , (0.8,0.0,1)      ],
+              [rnames[2]+"_0p8_0p8_1p0"  , r1bm1 ,  r2bm1  , (0.8,0.8,1)      ],
+              [rnames[2]+"_0p8_0p5_1p0"  , r1bm1 ,  r2bm1  , (0.8,0.5,1)      ],
+              [rnames[2]+"_0p8_0p3_1p0"  , r1bm1 ,  r2bm1  , (0.8,0.3,1)      ],
+              [rnames[2]+"_0p8_0p0_1p0"  , r1bm1 ,  r2bm1  , (0.8,0.0,1)      ],
 
-              ["r3_0p8_0p8_1p2"  , r1bm1 ,  r2bm1  , (0.8,0.8,1.2)      ],
-              ["r3_0p8_0p5_1p2"  , r1bm1 ,  r2bm1  , (0.8,0.5,1.2)      ],
-              ["r3_0p8_0p3_1p2"  , r1bm1 ,  r2bm1  , (0.8,0.3,1.2)      ],
-              ["r3_0p8_0p0_1p2"  , r1bm1 ,  r2bm1  , (0.8,0.0,1.2)      ],
+              [rnames[2]+"_0p8_0p8_1p2"  , r1bm1 ,  r2bm1  , (0.8,0.8,1.2)      ],
+              [rnames[2]+"_0p8_0p5_1p2"  , r1bm1 ,  r2bm1  , (0.8,0.5,1.2)      ],
+              [rnames[2]+"_0p8_0p3_1p2"  , r1bm1 ,  r2bm1  , (0.8,0.3,1.2)      ],
+              [rnames[2]+"_0p8_0p0_1p2"  , r1bm1 ,  r2bm1  , (0.8,0.0,1.2)      ],
 
-              ["r3_0p8_0p8_0p8"  , r1bm1 ,  r2bm1  , (0.8,0.8,0.8)      ],
-              ["r3_0p8_0p5_0p8"  , r1bm1 ,  r2bm1  , (0.8,0.5,0.8)      ],
-              ["r3_0p8_0p3_0p8"  , r1bm1 ,  r2bm1  , (0.8,0.3,0.8)      ],
-              ["r3_0p8_0p0_0p8"  , r1bm1 ,  r2bm1  , (0.8,0.0,0.8)      ],
-
-
-              ["r3_0p8_0p0_0p3"  , r1bm1 ,  r2bm1  , (0.8,0.0,0.3)        ],
-              ["r3_0p8_0p0_0p0"  , r1bm1 ,  r2bm1  , (0.8,0.0,0.0)        ],
-              ["r3_0p8_0p0_m0p3"  , r1bm1 ,  r2bm1  , (0.8,0.0,-0.3)      ],
-              ["r3_0p8_0p0_m0p5"  , r1bm1 ,  r2bm1  , (0.8,0.0,-0.5)      ],
-
-              ["r3_0p9_0p0_0p3"  , r1bm1 ,  r2bm1  ,  (0.9,0.0,0.3)       ],
-              ["r3_0p9_0p0_0p0"  , r1bm1 ,  r2bm1  ,  (0.9,0.0,0.0)       ],
-              ["r3_0p9_0p0_m0p3"  , r1bm1 ,  r2bm1  , (0.9,0.0,-0.3)      ],
-              ["r3_0p9_0p0_m0p5"  , r1bm1 ,  r2bm1  , (0.9,0.0,-0.5)      ],
+              [rnames[2]+"_0p8_0p8_0p8"  , r1bm1 ,  r2bm1  , (0.8,0.8,0.8)      ],
+              [rnames[2]+"_0p8_0p5_0p8"  , r1bm1 ,  r2bm1  , (0.8,0.5,0.8)      ],
+              [rnames[2]+"_0p8_0p3_0p8"  , r1bm1 ,  r2bm1  , (0.8,0.3,0.8)      ],
+              [rnames[2]+"_0p8_0p0_0p8"  , r1bm1 ,  r2bm1  , (0.8,0.0,0.8)      ],
 
 
-              ["r3_0p8_m0p3_0p3"  , r1bm1 ,  r2bm1  ,   (0.8,-0.3,0.3)        ],
-              ["r3_0p8_m0p3_0p0"  , r1bm1 ,  r2bm1  ,   (0.8,-0.3,0.0)        ],
-              ["r3_0p8_m0p3_m0p3"  , r1bm1 ,  r2bm1  ,  (0.8,-0.3,-0.3)      ],
-              ["r3_0p8_m0p3_m0p5"  , r1bm1 ,  r2bm1  ,  (0.8,-0.3,-0.5)      ],
+              [rnames[2]+"_0p8_0p0_0p3"  , r1bm1 ,  r2bm1  , (0.8,0.0,0.3)        ],
+              [rnames[2]+"_0p8_0p0_0p0"  , r1bm1 ,  r2bm1  , (0.8,0.0,0.0)        ],
+              [rnames[2]+"_0p8_0p0_m0p3"  , r1bm1 ,  r2bm1  , (0.8,0.0,-0.3)      ],
+              [rnames[2]+"_0p8_0p0_m0p5"  , r1bm1 ,  r2bm1  , (0.8,0.0,-0.5)      ],
 
-              ["r3_0p9_m0p3_0p3"  , r1bm1 ,  r2bm1  ,  (0.9,-0.3,0.3)       ],
-              ["r3_0p9_m0p3_0p0"  , r1bm1 ,  r2bm1  ,  (0.9,-0.3,0.0)       ],
-              ["r3_0p9_m0p3_m0p3"  , r1bm1 ,  r2bm1  , (0.9,-0.3,-0.3)      ],
-              ["r3_0p9_m0p3_m0p5"  , r1bm1 ,  r2bm1  , (0.9,-0.3,-0.5)      ],
+              [rnames[2]+"_0p9_0p0_0p3"  , r1bm1 ,  r2bm1  ,  (0.9,0.0,0.3)       ],
+              [rnames[2]+"_0p9_0p0_0p0"  , r1bm1 ,  r2bm1  ,  (0.9,0.0,0.0)       ],
+              [rnames[2]+"_0p9_0p0_m0p3"  , r1bm1 ,  r2bm1  , (0.9,0.0,-0.3)      ],
+              [rnames[2]+"_0p9_0p0_m0p5"  , r1bm1 ,  r2bm1  , (0.9,0.0,-0.5)      ],
+
+
+              [rnames[2]+"_0p8_m0p3_0p3"  , r1bm1 ,  r2bm1  ,   (0.8,-0.3,0.3)        ],
+              [rnames[2]+"_0p8_m0p3_0p0"  , r1bm1 ,  r2bm1  ,   (0.8,-0.3,0.0)        ],
+              [rnames[2]+"_0p8_m0p3_m0p3"  , r1bm1 ,  r2bm1  ,  (0.8,-0.3,-0.3)      ],
+              [rnames[2]+"_0p8_m0p3_m0p5"  , r1bm1 ,  r2bm1  ,  (0.8,-0.3,-0.5)      ],
+
+              [rnames[2]+"_0p9_m0p3_0p3"  , r1bm1 ,  r2bm1  ,  (0.9,-0.3,0.3)       ],
+              [rnames[2]+"_0p9_m0p3_0p0"  , r1bm1 ,  r2bm1  ,  (0.9,-0.3,0.0)       ],
+              [rnames[2]+"_0p9_m0p3_m0p3"  , r1bm1 ,  r2bm1  , (0.9,-0.3,-0.3)      ],
+              [rnames[2]+"_0p9_m0p3_m0p5"  , r1bm1 ,  r2bm1  , (0.9,-0.3,-0.5)      ],
 
              ]
 

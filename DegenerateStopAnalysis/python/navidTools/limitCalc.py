@@ -41,7 +41,7 @@ def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, s
 
     #processNames = { bkg:yld.yieldDictFull[bkg][0] for bkg in bkgs}
     processNames = yld.sampleNames
-    #processNames.update(  { sig:yld.yieldDictFull[sig][0] } )
+    #processNa/procmes.update(  { sig:yld.yieldDictFull[sig][0] } )
     #processNames.update(  { sig:'signal'} )
     processNames.update(  { 'signal':'signal'} )
 
@@ -82,7 +82,9 @@ def getLimit(yld, sig=None , outDir ="./cards/", postfix = "", sys_uncorr=1.2, s
           #print c.bins
         if not any(bkgExpectations):
           print "############ no background contributing to the bin %s, a small non zero value (0.001) has been assigned to the bin"%bin
-          c.expectation[(bin,process[bkgs[0]])]=0.001
+          print bkgs, process, c.expectation
+          #c.expectation[(bin,process[bkgs[0] ])]=0.001
+          c.expectation[(bin, process)]=0.001
           print bin, c.processes[bin], expectations   
           
     for bin in badBins:

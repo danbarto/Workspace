@@ -8,7 +8,7 @@ from Workspace.DegenerateStopAnalysis.cmgTuplesPostProcessed_mAODv2 import cmgTu
 from Workspace.DegenerateStopAnalysis.weights import weights , def_weights , Weight
 import os
 import re
-
+import glob
 #-------------------------
 
 
@@ -128,7 +128,9 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
     if "dy" in sampleList:
         DYJetsSample        = getChain(cmgPP.DYJetsM5to50HT[skim],histname='')
         sampleDict.update({
-              'dy1':             {'sample':cmgPP.DYJetsM5to50HT[skim]            ,'name':'DYJetsM5to50'  ,'color':colors['dy1']            , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },
+              'dy5':               {'sample':cmgPP.DYJetsM5to50HT[skim]          ,'name':'DYJetsM5to50'  ,'color':colors['dy1']            , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },
+              'dy50':              {'sample':cmgPP.DYJetsM50HT[skim]             ,'name':'DYJetsM50'  ,'color':colors['dy1']            , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },
+              'dyInv':             {'sample':cmgPP.DYJetsToNuNu[skim]            ,'name':'DYJetsInv'  ,'color':colors['dy1']            , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },
                         }) 
 
 
@@ -150,23 +152,28 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
     if scan:
         icolor = 1
         #skim = "inc"
-        mass_dict = cmgPP.mass_dict
-        if not mass_dict: 
-            raise Exception("No mass_dict available... Cannot create samples for mass scan")
-        for mstop in mass_dict:
-            if mstop > 425 : continue
-            for mlsp in mass_dict[mstop]:
-                        #icolor += 1 
-                        sampleDict.update({
+        #mass_dict = cmgPP.mass_dict
+        #if not mass_dict: 
+        #    raise Exception("No mass_dict available... Cannot create samples for mass scan")
+        #for mstop in mass_dict:
+        for mstop in range(100,601,25):
+            #if mstop > 425 : continue
+            #for mlsp in mass_dict[mstop]:
+            for dm in range(10,81,10):
+                mlsp = mstop - dm
+
+                s = getattr(cmgPP,"SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]
+                if glob.glob(  "%s/%s/*.root"%(s['dir'],s['name'] ) ):
+                    sampleDict.update({
                             #'s%s_%s'%(mstop,mlsp):      {'sample':eval("SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]        ,'name':'T2_4bd%s_%s'%(mstop,mlsp)          ,'color': icolor         , 'isSignal':1 ,'isData':0    ,"lumi":lumi_mc      } ,
                             #'s%s_%s'%(mstop,mlsp):      {'sample':getattr(cmgPP,"SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]        ,'name':'T2_4bd_%s_%s'%(mstop,mlsp)         , "weight":"(weight*(%s))"%weights.isrWeight(9.5e-5) ,'color': icolor         , 'isSignal':1 ,'isData':0    ,"lumi":lumi_mc      } ,
-                             's%s_%s'%(mstop,mlsp):      {'sample':getattr(cmgPP,"SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]        ,'name':'T2_4bd_%s_%s'%(mstop,mlsp)         ,'color': icolor         , 'isSignal':1 ,'isData':0    ,"lumi":lumi_mc      } ,
+                             's%s_%s'%(mstop,mlsp):      {'sample':getattr(cmgPP,"SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]        ,'name':'T2_4bd_%s_%s'%(mstop,mlsp)         ,'color': colors['s%s_%s'%(mstop,mlsp)]        , 'isSignal':1 ,'isData':0    ,"lumi":lumi_mc      } ,
                                             })
-
+                else:
+                    print "!!! Sample Not Found: %s, %s"%(mstop,mlsp)
 
     #scan8tev = False
     if do8tev:
-        import glob
         sampleDir_8tev = "/data/imikulec/monoJetTuples_v8/copyfiltered/"
         get8TevSample = lambda mstop, mlsp : sampleDir_8tev  +"/"+"T2DegStop_{mstop}_{mlsp}/histo_T2DegStop_{mstop}_{mlsp}.root".format(mstop=mstop, mlsp=mlsp)
         icolor = 1

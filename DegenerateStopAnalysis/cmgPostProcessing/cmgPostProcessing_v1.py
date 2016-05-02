@@ -481,7 +481,7 @@ def rwTreeClasses(sample, isample, args, temporaryDir, params={} ):
         'ngenTau', 'genTau_*', 
         'ngenLepFromTau', 'genLepFromTau_*', 
         'GenJet_*',
-        #'GenTracks_*',
+        'GenTracks_*',
                           ]
     
     readVariables_MC = []
@@ -517,7 +517,7 @@ def rwTreeClasses(sample, isample, args, temporaryDir, params={} ):
         'nLepGood', 'LepGood_*', 
         'nLepOther', 'LepOther_*', 
         'nTauGood', 'TauGood_*',
-        #'Tracks_*', 'isoTrack_*',
+        'Tracks_*', 'isoTrack_*',
         ] 
     
     readVariables_DATAMC = []
@@ -1518,7 +1518,7 @@ def computeWeight(sample, sumWeight,  splitTree, saveTree, params, xsec=None):
         else:
             xSection = xsec
         lumiScaleFactor = xSection * target_lumi / float(sumWeight)
-    print "========= LUMI FACTOR: ", sample['name'], xSection, sumWeight, target_lumi, lumiScaleFactor
+    #print "========= LUMI FACTOR: ", sample['name'], xSection, sumWeight, target_lumi, lumiScaleFactor
         
     saveTree.weight = lumiScaleFactor * genWeight
     
