@@ -5,6 +5,7 @@ colors ={
               'z':             ROOT.kOrange + 1     , #ROOT.kOrange + 5         ,#ROOT.kSpring+10       
               #'qcd':           ROOT.kViolet         , 
               'qcd':           ROOT.kMagenta + 3, #ROOT.kRed -6         , 
+              'qcdem':         ROOT.kMagenta - 3, #ROOT.kRed -6         , 
               'wtau':          ROOT.kSpring-2       ,
               'wnotau':        ROOT.kSpring+2       ,
               'dy1':           ROOT.kMagenta       ,

@@ -32,7 +32,9 @@ import pickle
 
 
 def getSamples( wtau  = False, sampleList=['w','tt','z','sig'], 
-                useHT = False, getData = False, blinded=True, scan=True, skim='presel', cmgPP=None, do8tev=False, 
+                useHT = False, getData = False, blinded=True, scan=True, skim='presel', cmgPP=None, do8tev=False,
+                weights = weights, def_weights = def_weights,
+                #data_triggers = , data_flags = ,  
                 #lumi_mc=10000, lumi_data_blinded=2245.386, lumi_data_unblinded=139.63):
                 lumi_target=lumis["lumi_target"], lumi_data_blinded=lumis['lumi_data_blinded'], lumi_data_unblinded=lumis['lumi_data_unblinded']):
 
@@ -110,6 +112,8 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
     if "qcd" in sampleList:
         sampleDict.update({
               'qcd':             {'sample':cmgPP.QCD[skim]            ,'name':'QCD'  ,'color':colors['qcd']            , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },
+              'qcdem':             {'sample':cmgPP.QCDPT_EM[skim]            ,'name':'QCD'  ,'color':colors['qcdem']            , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },
+              #'qcd':             {'sample':cmgPP.QCD[skim]            ,'name':'QCD'  ,'color':colors['qcd']            , 'isSignal':0 ,'isData':0    ,"lumi":lumi_mc      },
                         })
 
     if "d" in sampleList or "dblind" in sampleList:
@@ -161,7 +165,6 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
             #for mlsp in mass_dict[mstop]:
             for dm in range(10,81,10):
                 mlsp = mstop - dm
-
                 s = getattr(cmgPP,"SMS_T2_4bd_mStop_%s_mLSP_%s"%(mstop,mlsp))[skim]
                 if glob.glob(  "%s/%s/*.root"%(s['dir'],s['name'] ) ):
                     sampleDict.update({
@@ -171,8 +174,6 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
                                             })
                 else:
                     print "!!! Sample Not Found: %s, %s"%(mstop,mlsp)
-
-    #scan8tev = False
     if do8tev:
         sampleDir_8tev = "/data/imikulec/monoJetTuples_v8/copyfiltered/"
         get8TevSample = lambda mstop, mlsp : sampleDir_8tev  +"/"+"T2DegStop_{mstop}_{mlsp}/histo_T2DegStop_{mstop}_{mlsp}.root".format(mstop=mstop, mlsp=mlsp)
@@ -212,7 +213,7 @@ def getSamples( wtau  = False, sampleList=['w','tt','z','sig'],
         elif do8tev and re.match("s8tev\d\d\d_\d\d\d|s8tev\d\d\d_\d\d|",samp).group():                
             sampleDict[samp]["weights"] = weights["sigScan_8tev"]
         else:
-            sampleDict[samp]["weights"] = Weight({},def_weights)
+            sampleDict[samp]["weights"] = Weight({}, def_weights)
 
         sampleDict2[samp] = Sample(**sampleDict[samp])
     samples = Samples(**sampleDict2)

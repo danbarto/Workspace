@@ -43,12 +43,9 @@ weightDict={
                                 #"default":  wptweight_a  ,
                                 }
                    },
-
-
              "tt": {
                     #"top_pt": ttptweight
                    },
-             
               "s10FS":{
                     "gen_filter_eff": 0.2546 ,
                     },
@@ -61,7 +58,6 @@ weightDict={
               "t2tt30FS":{
                     "gen_filter_eff": 0.2783 ,
                     },
-
              "sigScan": {
                     "baseWeight": "weight",
                     "isrWeight": isrWeight,

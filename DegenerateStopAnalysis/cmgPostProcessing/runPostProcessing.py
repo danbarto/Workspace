@@ -126,6 +126,22 @@ sampleSets = {
                                         #"QCD_Pt3200toInf",
                                       ],
                             },
+                'qcdpt_em':{
+                            'samples':[
+                                        'QCD_Pt15to20_EMEnriched',
+                                        'QCD_Pt20to30_EMEnriched',
+                                        'QCD_Pt30to50_EMEnriched',
+                                        'QCD_Pt50to80_EMEnriched',
+                                        'QCD_Pt80to120_EMEnriched',
+                                        'QCD_Pt120to170_EMEnriched',
+                                        'QCD_Pt170to300_EMEnriched',
+                                        'QCD_Pt300toInf_EMEnriched',
+                                      ],
+                            },
+                'qcdpt_mu':{
+                            'samples':[
+                                      ],
+                            },
                 'data':{
                             'samples':[
 
@@ -298,14 +314,15 @@ signalSets=\
                                 ['SMS_T2_4bd_mStop_350_mLSP_270to340', '--processSignalScan', "350", "330"],
                                 ['SMS_T2_4bd_mStop_350_mLSP_270to340', '--processSignalScan', "350", "340"]]},
 
-   'mStop375': {  'samples': [  ['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "295"],
-                                ['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "305"],
+   'mStop375': {  'samples': [  #['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "295"],
+                                #['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "305"],
                                 ['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "315"],
-                                ['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "325"],
-                                ['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "335"],
-                                ['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "345"],
-                                ['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "355"],
-                                ['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "365"]]},
+                                #['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "325"],
+                                #['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "335"],
+                                #['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "345"],
+                                #['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "355"],
+                                #['SMS_T2_4bd_mStop_375_mLSP_295to365', '--processSignalScan', "375", "365"]
+                                    ]},
 
    'mStop400': {  'samples': [  ['SMS_T2_4bd_mStop_400_mLSP_320to390', '--processSignalScan', "400", "320"],
                                 ['SMS_T2_4bd_mStop_400_mLSP_320to390', '--processSignalScan', "400", "330"],

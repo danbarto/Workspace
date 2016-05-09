@@ -81,3 +81,24 @@ plotDict.update(dmtVars)
 
 
 plots = Plots(**plotDict)
+
+
+
+
+nminus1s=   {
+
+                    "met":          ["met","CT"]   , 
+                    "mt":           ["mt"]   , 
+                    "ht":           ["ht","CT"]   , 
+                    "ct":           ["CT"]   , 
+                    "LepPhi":       ["lepPhi"]   , 
+                    "LepEta":       ["lepEta"]   , 
+                    "nJets30":      ["Jet",]   , 
+                    "nJets60":      ["Jet"]   , 
+                    #"nBJets":       ["BVeto"]   , 
+                    "nBJets":       ["CRTT2", "BVeto"]   , 
+                    "nSoftBJets":   ["BVeto"]   , 
+                    "nHardBJets" :  ["BVeto"]   , 
+                    "LepPt":        ["lepPt","MuPt"]
+
+            }
