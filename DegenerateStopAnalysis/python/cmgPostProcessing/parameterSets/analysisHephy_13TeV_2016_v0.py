@@ -62,7 +62,7 @@ def getParameterSet(args):
         # keep an empty string for inclusive lepton
         skimLeptonCondition = ''
     elif skimLepton == 'oneLep':
-        skimLeptonCondition = "nLepGood >=1 || nLepOther >=1"
+        skimLeptonCondition = " ((nLepGood >=1 && LepGood_pt[0] > 20) || (nLepOther >=1 && LepOther_pt[0] > 20))"
     else:
         pass
 
@@ -122,8 +122,8 @@ def getParameterSet(args):
             'pdgId': ('pdgId', operator.eq, 13, operator.abs),
             'pt': ('pt', operator.gt, 5),
             'eta': ('eta', operator.lt, 2.4, operator.abs),
-            'dxy': ('dxy', operator.lt, 0.05, operator.abs),
-            'dz': ('dz', operator.lt, 0.2, operator.abs),
+            'dxy': ('dxy', operator.lt, 0.02, operator.abs),
+            'dz': ('dz', operator.lt, 0.5, operator.abs),
             'hybIso': {
                 'ptSwitch': 25, 
                 'relIso': {
@@ -136,38 +136,48 @@ def getParameterSet(args):
         #
         # electron selection
         # https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2#Spring15_selection_25ns
-        'el': {
+        'el': { #selection with Veto Electron ID
             'pdgId': ('pdgId', operator.eq, 11, operator.abs),
             'pt': ('pt', operator.gt, 5),
             'eta': ('eta', operator.lt, 2.5, operator.abs),
-            'SPRING15_25ns_v1': ('SPRING15_25ns_v1', operator.ge, 1),
-            #'convVeto': ('convVeto', operator.eq, 1),
-            #'elWP': {
-            #    'eta_EB': 1.479, 'eta_EE': 2.5,
-            #    'vars': {
-            #        'hadronicOverEm': {
-            #            'EB': 0.181, 'EE': 0.116, 'opCut': operator.lt, 'opVar': None,
-            #            },
-            #        'dEtaScTrkIn': {
-            #            'EB': 0.0152, 'EE': 0.0113, 'opCut': operator.lt, 'opVar': operator.abs,
-            #            },
-            #        'dPhiScTrkIn': {
-            #            'EB': 0.216, 'EE': 0.237, 'opCut': operator.lt, 'opVar': operator.abs,
-            #            },
-            #        'eInvMinusPInv': {
-            #            'EB': 0.207, 'EE':  0.174, 'opCut': operator.lt, 'opVar': operator.abs,
-            #            },
-            #        'dxy': {
-            #            'EB': 0.0564, 'EE': 0.222, 'opCut': operator.lt, 'opVar': operator.abs,
-            #            },
-            #        'dz': {
-            #            'EB': 0.472, 'EE': 0.921, 'opCut': operator.lt, 'opVar': operator.abs,
-            #            },
-            #        'lostHits': {
-            #            'EB': 2, 'EE': 3, 'opCut': operator.le, 'opVar': None,
-            #            },
-            #        },
-            #    },
+            'dxy': ('dxy', operator.lt, 0.02, operator.abs), #synchronisation with muons
+            #'dz': ('dz', operator.lt, 0.5, operator.abs), #looser than Veto ID
+            'SPRING15_25ns_v1': ('SPRING15_25ns_v1', operator.ge, 1), #EG POG Veto ID
+            },
+        
+        'el2': { #selection with Veto Electron ID without sigmaEtaEta cut
+            'pdgId': ('pdgId', operator.eq, 11, operator.abs),
+            'pt': ('pt', operator.gt, 5),
+            'eta': ('eta', operator.lt, 2.5, operator.abs),
+            'dxy': ('dxy', operator.lt, 0.02, operator.abs), #synchronisation with muons
+            #'dz': ('dz', operator.lt, 0.5, operator.abs), #looser than Veto ID
+            'convVeto': ('convVeto', operator.eq, 1),
+            'elWP': {
+                'eta_EB': 1.479, 'eta_EE': 2.5,
+                'vars': {
+                    'hadronicOverEm': {
+                        'EB': 0.181, 'EE': 0.116, 'opCut': operator.lt, 'opVar': None,
+                        },
+                    'dEtaScTrkIn': {
+                        'EB': 0.0152, 'EE': 0.0113, 'opCut': operator.lt, 'opVar': operator.abs,
+                        },
+                    'dPhiScTrkIn': {
+                        'EB': 0.216, 'EE': 0.237, 'opCut': operator.lt, 'opVar': operator.abs,
+                        },
+                    'eInvMinusPInv': {
+                        'EB': 0.207, 'EE':  0.174, 'opCut': operator.lt, 'opVar': operator.abs,
+                        },
+                    'dxy': {
+                        'EB': 0.0564, 'EE': 0.222, 'opCut': operator.lt, 'opVar': operator.abs,
+                        },
+                    'dz': {
+                        'EB': 0.472, 'EE': 0.921, 'opCut': operator.lt, 'opVar': operator.abs,
+                        },
+                    'lostHits': {
+                        'EB': 2, 'EE': 3, 'opCut': operator.le, 'opVar': None,
+                        },
+                    },
+                },
             },
         }
 
@@ -189,7 +199,8 @@ def getParameterSet(args):
     JetSel = {
         'branchPrefix': 'Jet',
         'branches': [
-            'pt/F', 'eta/F', 'phi/F', 'id/I','btagCSV/F', 'mass/F'
+            'pt/F', 'eta/F', 'phi/F', 'id/I','btagCSV/F', 'mass/F' , 'chHEF/F',
+            'hadronFlavour/I',
             ],
         'nMax': 25,
         'bas': {
@@ -201,7 +212,7 @@ def getParameterSet(args):
             'pt': ('pt', operator.gt, 60),
             },
         'isr': {
-            'pt': ('pt', operator.gt, 110),
+            'pt': ('pt', operator.gt, 100),
             },
         'isrH': {
             'pt': ('pt', operator.gt, 325),
@@ -284,6 +295,44 @@ def getParameterSet(args):
         }
 
     params['GenSel'] = GenSel
+    
+    # criteria to veto events for FastSim samples, as resulted from 2016 "corridor studies
+    # used to evaluate Flag_veto_event_fastSimJets
+    # https://twiki.cern.ch/twiki/bin/view/CMS/SUSRecommendationsICHEP16
         
+    Veto_fastSimJets_recoJet = {
+        'branchPrefix': 'Jet',
+        'branches': [
+            'pt/F', 'eta/F', 'phi/F', 'id/I','btagCSV/F', 'mass/F', 'chHEF',
+            ],
+        'nMax': 25,
+        'recoJet': {
+            'id': ('id', operator.ge, 1),
+            'pt': ('pt', operator.gt, 20),
+            'eta': ('eta', operator.lt, 2.5, operator.abs),
+            'chHEF': {'chHEF', operator.lt, 0.1}
+            },
+        }
+
+    Veto_fastSimJets_genJet = {
+        'branchPrefix': 'GenJet',
+        'branches': [
+            'pt/F', 'eta/F', 'phi/F', 'mass/F',
+            ],
+        'nMax': 25,
+        'genJet': {
+            },
+        }
+    
+    Veto_fastSimJets = {
+        'recoJet': Veto_fastSimJets_recoJet,
+        'genJet': Veto_fastSimJets_genJet,
+        'criteria': {
+            'dR': ('dR', operator.lt, 0.3),
+            }
+        }
+
+    params['Veto_fastSimJets'] = Veto_fastSimJets
+
     #
     return params

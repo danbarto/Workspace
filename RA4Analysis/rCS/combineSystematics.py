@@ -64,36 +64,42 @@ lepSF_h2b = d.GetPrimitive('h2b')
 #pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_validation_4j_lep_data_2p57/'
 #pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_SR2015_lep_data_2p57/'
 #pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_SR2016_v1_QCD_lep_MC_3p99/'
-pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_validation_4j_lep_data_3p99/'
+#pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_validation_4j_lep_data_3p99/'
+
 #pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_SR2016_v1_100p_lep_data_3p99/'
+#pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_SR2016_v1_100p_lep_data_3p99/'
+#pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_SR2016_v2_lep_data_7p62/'
+pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_validation_4j_altWSB_lep_data_12p9/'
+#pickleDir =  '/data/dspitzbart/Results2016/Prediction_Spring16_templates_SR2016_v2_lep_data_7p7/'
 
 saveDir = pickleDir
 #saveDir = '/data/dspitzbart/Results2016/Prediction_SFtemplates_fullSR_lep_data_2p25/'
-
-wxsec   = pickle.load(file('/data/easilar/Spring15/25ns/WJetsxsec_syst_SRAll_pkl'))
-ttxsec  = pickle.load(file('/data/easilar/Spring15/25ns/TTJetsxsec_syst_SRAll_pkl'))
-ttvxsec = pickle.load(file('/data/easilar/Spring15/25ns/TTVxsec_syst_SRAll_pkl'))
-wpol    = pickle.load(file('/data/dhandl/results2015/WPolarizationEstimation/20151218_wjetsPolSys_pkl'))
-b_err   = pickle.load(file('/data/dspitzbart/Results2016/btagErr_pkl_update'))
-l_err   = pickle.load(file('/data/dspitzbart/Results2016/mistagErr_pkl_update'))
-qcd_err = pickle.load(file('/data/dspitzbart/Results2016/qcdErr_pkl_update'))
+path_syst1 = '/data/easilar/Results2016/ICHEP/SYS/V1/'
+wxsec   = pickle.load(file(path_syst1+'Unc_on_WJets__syst_SRAll_pkl'))
+ttvxsec = pickle.load(file(path_syst1+'Unc_on_TTV__syst_SRAll_pkl'))
+ttxsec  = pickle.load(file('/data/dspitzbart/Results2016/systematics2016/ttxsec_dummy_pkl'))
+wpol    = pickle.load(file('/data/dspitzbart/Results2016/systematics2016/Wpol_pkl'))
+b_err   = pickle.load(file('/data/dspitzbart/Results2016/systematics2016/btagErr_pkl'))
+l_err   = pickle.load(file('/data/dspitzbart/Results2016/systematics2016/mistagErr_pkl'))
+qcd_err = pickle.load(file('/data/dspitzbart/Results2016/systematics2016/qcdErr_pkl'))
 #rcs     = pickle.load(file(pickleDir+'singleLeptonic_Spring15__estimationResults_pkl_kappa_corrected'))
 rcs     = pickle.load(file(pickleDir+'singleLeptonic_Spring16__estimationResults_pkl_kappa_corrected'))
 if validation:
   dilep   = pickle.load(file('/data/dspitzbart/Results2016/dilep_val_pkl'))
 else:
-  dilep   = pickle.load(file('/data/dspitzbart/Results2016/dilep_pkl'))
+  #dilep   = pickle.load(file(path_syst1+'unc_on_diLep_with_SRAll_V4_pkl'))
+  dilep   = pickle.load(file('/data/dspitzbart/Results2016/systematics2016/dilep_envelope_pkl'))
 
 
 validation = True
 
 #topPt_Err = pickle.load(file("/data/easilar/Spring15/25ns/extended_with_truth_counts_topPt_pkl"))
 #topPt_Err = pickle.load(file("/data/dspitzbart/Results2016/topErr_pkl_update"))
-topPt_Err = pickle.load(file("/data/easilar/Spring15/25ns/TTJets_combined_TopPtWeight_syst_SRAll_pkl"))
-
-pu_Unc    = pickle.load(file("/data/easilar/Spring15/25ns/extended_with_truth_counts_PU_pkl"))
-lep_Eff   = pickle.load(file("/data/easilar/Spring15/25ns/extended_with_truth_counts_LS_pkl"))
-jec       = pickle.load(file('/data/easilar/Spring15/25ns/Jec_syst_SRAll_pkl'))
+topPt_Err = pickle.load(file(path_syst1+"unc_on_topPt_SRAll_pkl"))
+pu_Unc    = pickle.load(file(path_syst1+"unc_on_PU_SRAll_pkl"))
+lep_Eff   = pickle.load(file("/data/dspitzbart/Results2016/systematics2016/lepEff_dummy_pkl"))
+jec       = pickle.load(file(path_syst1+'/unc_on_JEC_SRAll_v1_pkl'))
+#jec       = pickle.load(file('/data/dspitzbart/Results2016/systematics2016/JEC_dummy_pkl'))
 
 dataResult = rcs
 
@@ -168,7 +174,7 @@ for injb,srNJet in enumerate(sorted(signalRegions)):
       #b-tag SF
       #total
       if validation:
-        bErr=0.05
+        bErr=0.08
         mistag_SF = 0.05/sqrt(2)
         b_c_SF = 0.05/sqrt(2)
       else:
@@ -177,17 +183,17 @@ for injb,srNJet in enumerate(sorted(signalRegions)):
         b_c_SF    = b_err['tot_pred'][srNJet][stb][htb]
       bErrH.SetBinContent(i, bErr)
       
-      #tt
-      if validation:
-        bErr_tt = 0.03
-      else:
-        bErr_tt = sqrt(b_err['TT_kappa'][srNJet][stb][htb]**2 + l_err['TT_kappa'][srNJet][stb][htb]**2) # sum of squares of b/c and mistag
-      
-      #W
-      if validation:
-        bErr_W = 0.12
-      else:
-        bErr_W = sqrt(b_err['W_kappa'][srNJet][stb][htb]**2 + l_err['W_kappa'][srNJet][stb][htb]**2) # sum of squares of b/c and mistag
+      ##tt
+      #if validation:
+      #  bErr_tt = 0.03
+      #else:
+      #  bErr_tt = sqrt(b_err['TT_kappa'][srNJet][stb][htb]**2 + l_err['TT_kappa'][srNJet][stb][htb]**2) # sum of squares of b/c and mistag
+      #
+      ##W
+      #if validation:
+      #  bErr_W = 0.12
+      #else:
+      #  bErr_W = sqrt(b_err['W_kappa'][srNJet][stb][htb]**2 + l_err['W_kappa'][srNJet][stb][htb]**2) # sum of squares of b/c and mistag
       
       #W x-sec
       if validation:
@@ -223,14 +229,14 @@ for injb,srNJet in enumerate(sorted(signalRegions)):
       if validation:
         puErr = 0.1
       else:
-        puErr = abs(pu_Unc[srNJet][stb][htb]['delta_Up']) 
+        puErr = abs(pu_Unc[srNJet][stb][htb]['delta']) 
       puErrH.SetBinContent(i, puErr)
       
       #top pt
       if validation:
         topErr = 0.08
       else:
-        topErr = abs(topPt_Err[srNJet][stb][htb]['delta_avarage'])  
+        topErr = abs(topPt_Err[srNJet][stb][htb]['delta'])  
       topErrH.SetBinContent(i, topErr)
       
       #lepton SF
@@ -244,26 +250,27 @@ for injb,srNJet in enumerate(sorted(signalRegions)):
       if validation:
         wPErr = 0.04
       else:
-        wPErr = sqrt(((abs(wpol[srNJet][stb][htb]['uWPolMinus10'])+abs(wpol[srNJet][stb][htb]['uWPolPlus10']))/2)**2 + ((abs(wpol[srNJet][stb][htb]['uTTPolMinus5'])+abs(wpol[srNJet][stb][htb]['uTTPolPlus5']))/2)**2) # w pol for w and ttbar
+        wPErr = sqrt(wpol[srNJet][stb][htb]['W']**2 + wpol[srNJet][stb][htb]['TT']**2)
+        #wPErr = sqrt(((abs(wpol[srNJet][stb][htb]['uWPolMinus10'])+abs(wpol[srNJet][stb][htb]['uWPolPlus10']))/2)**2 + ((abs(wpol[srNJet][stb][htb]['uTTPolMinus5'])+abs(wpol[srNJet][stb][htb]['uTTPolPlus5']))/2)**2) # w pol for w and ttbar
       wPErrH.SetBinContent(i, wPErr)
       
       #JEC
       if validation:
-        jecErr = 0.09
+        jecErr = 0.20
       else:
         jecErr = (abs(jec[srNJet][stb][htb]['delta_Up_central']) + abs(jec[srNJet][stb][htb]['delta_Down_central']))/2
       jecErrH.SetBinContent(i, jecErr)
       
       #QCD fit
       if validation:
-        qcdErr = 0.03
+        qcdErr = 0.05
       else:
         qcdErr = qcd_err[srNJet][stb][htb]
       qcdErrH.SetBinContent(i, qcdErr)
       
       #2l
       if validation:
-        dilepErr = 0.075
+        dilepErr = 0.1
         if srNJet == (5,5): dilepErr = 0.075
         if srNJet == (6,7): dilepErr = 0.15
         if srNJet == (8,-1): dilepErr = 0.30
@@ -273,10 +280,10 @@ for injb,srNJet in enumerate(sorted(signalRegions)):
       
       # uncertainties on MC rest
       trigger_err = 0.01
-      lumi_err = 0.045
+      lumi_err = 0.062
       rest_xsec = 0.55
       
-      # Rcs uncertainties
+      # Rcs uncertainties, also considers the composition of W and ttbar and therefore is sensitive to using MC or data
       if rcs[srNJet][stb][htb]['tot_pred']>0: rcsErr = sqrt(rcs[srNJet][stb][htb]['W_pred_errs']['syst']**2+rcs[srNJet][stb][htb]['TT_rCS_fits_MC']['syst']**2)/rcs[srNJet][stb][htb]['tot_pred']
       else: rcsErr = 0.5
       if rcs[srNJet][stb][htb]['TT_pred']>0: rcsErr_tt = rcs[srNJet][stb][htb]['TT_rCS_fits_MC']['syst']/rcs[srNJet][stb][htb]['TT_pred']
@@ -438,7 +445,7 @@ h_Stack = ROOT.THStack('h_Stack','Stack')
 
 print 'min and max of the different sources'
 for h in hists:
-  print h.GetName(), round(h.GetMinimum(),2), round(h.GetMaximum(),2)
+  print h.GetName(), round(h.GetMinimum(),3), round(h.GetMaximum(),3)
 
 for i_h,h in enumerate(hists):
   h_Stack.Add(h)
@@ -493,7 +500,7 @@ latex1.SetTextSize(0.04)
 latex1.SetTextAlign(11)
 
 latex1.DrawLatex(0.15,0.96,'CMS #bf{#it{Prelimiary}}')
-latex1.DrawLatex(0.81,0.96,"#bf{4.0fb^{-1} (13TeV)}")
+latex1.DrawLatex(0.81,0.96,"#bf{"+printlumi+"fb^{-1} (13TeV)}")
 
 h_Stack.GetXaxis().SetLabelSize(0.04)
 h_Stack.GetYaxis().SetLabelSize(0.055)
@@ -528,9 +535,9 @@ total_err.Draw('2 same')
 
 can.cd()
 
-can.Print('/afs/hephy.at/user/'+username[0]+'/'+username+'/www/Results2016B/syst_uncertainties/sys_validation_preapp_2016_v1.png')
-can.Print('/afs/hephy.at/user/'+username[0]+'/'+username+'/www/Results2016B/syst_uncertainties/sys_validation_preapp_2016_v1.root')
-can.Print('/afs/hephy.at/user/'+username[0]+'/'+username+'/www/Results2016B/syst_uncertainties/sys_validation_preapp_2016_v1.pdf')
+can.Print('/afs/hephy.at/user/'+username[0]+'/'+username+'/www/Results2016B/syst_uncertainties/sys_'+predictionName+'.png')
+can.Print('/afs/hephy.at/user/'+username[0]+'/'+username+'/www/Results2016B/syst_uncertainties/sys_'+predictionName+'.root')
+can.Print('/afs/hephy.at/user/'+username[0]+'/'+username+'/www/Results2016B/syst_uncertainties/sys_'+predictionName+'.pdf')
 
 
 savePickle = True

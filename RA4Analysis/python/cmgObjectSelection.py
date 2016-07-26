@@ -21,7 +21,7 @@ def cmgLooseMuID(r, nLep):
 def cmgTightMuID(r, nLep):
   return r.LepGood_pt[nLep]>=25 and abs(r.LepGood_eta[nLep])<=2.4\
      and r.LepGood_miniRelIso[nLep]<0.2\
-     and r.LepGood_mediumMuonId[nLep]\
+     and r.LepGood_ICHEPmediumMuonId[nLep]\
      and abs(r.LepGood_sip3d[nLep])<4
 
 def cmgLooseEleID(r, nLep):
@@ -30,7 +30,7 @@ def cmgLooseEleID(r, nLep):
 def cmgTightEleID(r, nLep):
   return r.LepGood_pt[nLep]>=10 and abs(r.LepGood_eta[nLep])<=2.4\
     and  r.LepGood_miniRelIso[nLep]<0.1  \
-    and  r.LepGood_eleCutIdSpring15_25ns_v1[nLep]==4 
+    and  r.LepGood_eleCBID_SPRING15_25ns_ConvVetoDxyDz[nLep]==4 
 
 #def cmgTightEleID(r, nLep):
 #  return r.LepGood_pt[nLep]>=25 and abs(r.LepGood_eta[nLep])<2.5\
@@ -111,7 +111,20 @@ def get_cmg_recoMuons(c):
   res = [getObjDict(c, 'LepGood_', ['eta','pt','phi','charge', 'dxy', 'dz', 'relIso03','tightId', 'pdgId'], i) for i in range(int(getVarValue(c, 'nLepGood')))]
   return filter(lambda m:abs(m['pdgId'])==13, res)
 
-
+def get_matched_Jets(jets,genParts):
+    matched_jets = []
+    for jet in jets:
+      ismatched = False
+      for genPart in genParts:
+        if ismatched :  break
+        if (abs(genPart["pdgId"]) >5) : continue
+        momid = genPart["motherId"] 
+        if not (momid==6 or momid==23 or momid==24 or momid==25 or momid>1e6) : continue 
+        dR = deltaR(jet,genPart)
+        if dR < 0.3 : 
+          ismatched = True
+          matched_jets.append(jet)
+    return matched_jets
 
 #def cmgGoodLepID(r,  nLep, ptCut=10., absEtaCut=2.4, relIso03Cut=0.3):
 #  return cmgLooseLepID(r, nLep, ptCut, absEtaCut, relIso03Cut) and r.LepGood_tightId[nLep]

@@ -16,13 +16,14 @@ ROOT.gSystem.Load("libFWCoreFWLite.so")
 ROOT.AutoLibraryLoader.enable()
 
 from Workspace.HEPHYPythonTools.helpers import getChunks
-from Workspace.RA4Analysis.cmgTuples_Data25ns_PromtV2 import SingleElectron_Run2016B_PromptReco_v2 , SingleMuon_Run2016B_PromptReco_v2
+from Workspace.RA4Analysis.cmgTuples_Data25ns_PromptRecoV2 import *
 from Workspace.RA4Analysis.cmgTuples_Spring16_MiniAODv2 import *
 from systematics_helper import calc_btag_systematics, calc_LeptonScale_factors_and_systematics, calc_TopPt_Weights , calcDLDictionary, calc_diLep_contributions ,  fill_branch_WithJEC , getGenWandLepton , getGenTopWLepton
 from btagEfficiency import *
 from readVetoEventList import *
 
-bTagEffFile = '/data/dspitzbart/Spring16/btagEfficiency/effs_presel_pkl_WPupdate'
+bTagEffFile     = '/data/dspitzbart/Spring16/btagEfficiency/effs_presel_JECv6_pkl'
+scaleFactorDir  = '$CMSSW_BASE/src/Workspace/RA4Analysis/cmgPostProcessing/data/'
 
 try:
   mcEffDict = pickle.load(file(bTagEffFile))
@@ -45,7 +46,7 @@ separateBTagWeights = True
 defSampleStr = "TTJets_LO"
 
 #subDir = "postProcessing_Run2016B_4fb_data"
-subDir = "postProcessing_Spring16_V6"
+subDir = "postProcessing_Run2016BCD"
 
 #branches to be kept for data and MC
 branchKeepStrings_DATAMC = ["run", "lumi", "evt", "isData", "rho", "nVert",
@@ -75,7 +76,7 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("--samples", dest="allsamples", default=defSampleStr, type="string", action="store", help="samples:Which samples.")
 parser.add_option("--inputTreeName", dest="inputTreeName", default="treeProducerSusySingleLepton", type="string", action="store", help="samples:Which samples.")
-parser.add_option("--targetDir", dest="targetDir", default="/data/"+username+"/cmgTuples/"+subDir+'/', type="string", action="store", help="target directory.")
+parser.add_option("--targetDir", dest="targetDir", default="/afs/hephy.at/data/"+username+"01/cmgTuples/"+subDir+'/', type="string", action="store", help="target directory.")
 parser.add_option("--skim", dest="skim", default="", type="string", action="store", help="any skim condition?")
 parser.add_option("--small", dest="small", default = False, action="store_true", help="Just do a small subset.")
 parser.add_option("--for_dilep", dest="for_dilep", default = False, action="store_true", help="remove initial skim for diLep.")
@@ -150,29 +151,40 @@ if sys.argv[0].count('ipython'):
 
 ###For PU reweight###
 #PU_dir = "/afs/hephy.at/user/e/easilar/www/data/Run2016B/4fb/PU_histos/"
+#PU_dir = "/data/easilar/PU_Histos/"
+#PU_File_66mb = ROOT.TFile(PU_dir+"/h_ratio_67p7.root")
+#PU_File_70mb = ROOT.TFile(PU_dir+"/h_ratio_71p3.root")
+#PU_File_74mb = ROOT.TFile(PU_dir+"/h_ratio_74p9.root")
+#PU_histo_66 = PU_File_66mb.Get("puRatio")
+#PU_histo_70 = PU_File_70mb.Get("puRatio")
+#PU_histo_74 = PU_File_74mb.Get("puRatio")
 PU_dir = "/data/easilar/PU_Histos/"
-PU_File_66mb = ROOT.TFile(PU_dir+"/h_ratio_67p7.root")
-PU_File_70mb = ROOT.TFile(PU_dir+"/h_ratio_71p3.root")
-PU_File_74mb = ROOT.TFile(PU_dir+"/h_ratio_74p9.root")
-PU_histo_66 = PU_File_66mb.Get("puRatio")
-PU_histo_70 = PU_File_70mb.Get("puRatio")
-PU_histo_74 = PU_File_74mb.Get("puRatio")
+PU_File_59p85mb = ROOT.TFile(PU_dir+"/h_ratio_59p85.root")
+PU_File_63mb = ROOT.TFile(PU_dir+"/h_ratio_63.root")
+PU_File_66p15mb = ROOT.TFile(PU_dir+"/h_ratio_66p15.root")
+PU_histo_59p85 = PU_File_59p85mb.Get("h_ratio")
+PU_histo_63 = PU_File_63mb.Get("h_ratio")
+PU_histo_66p15 = PU_File_66p15mb.Get("h_ratio")
 ######################
 
 ###For Lepton SF#####
-mu_mediumID_File = ROOT.TFile("/data/easilar/SF2015/TnP_MuonID_NUM_MediumID_DENOM_generalTracks_VAR_map_pt_eta.root")
-mu_looseID_File = ROOT.TFile("/data/easilar/SF2015/TnP_MuonID_NUM_LooseID_DENOM_generalTracks_VAR_map_pt_eta-2.root")
-mu_miniIso02_File = ROOT.TFile("/data/easilar/SF2015/TnP_MuonID_NUM_MiniIsoTight_DENOM_LooseID_VAR_map_pt_eta.root")
-mu_sip3d_File = ROOT.TFile("/data/easilar/SF2015/TnP_MuonID_NUM_TightIP3D_DENOM_LooseID_VAR_map_pt_eta.root")
-ele_kin_File = ROOT.TFile("/data/easilar/SF2015/kinematicBinSFele.root")
+mu_mediumID_File  = ROOT.TFile(scaleFactorDir+'TnP_MuonID_NUM_MediumID_DENOM_generalTracks_VAR_map_pt_eta.root')
+mu_looseID_File   = ROOT.TFile(scaleFactorDir+'TnP_MuonID_NUM_LooseID_DENOM_generalTracks_VAR_map_pt_eta.root')
+mu_miniIso02_File = ROOT.TFile(scaleFactorDir+'TnP_MuonID_NUM_MiniIsoTight_DENOM_MediumID_VAR_map_pt_eta.root')
+mu_sip3d_File     = ROOT.TFile(scaleFactorDir+'TnP_MuonID_NUM_TightIP3D_DENOM_MediumID_VAR_map_pt_eta.root')
+mu_HIP_File       = ROOT.TFile(scaleFactorDir+'general_tracks_and_early_general_tracks_corr_ratio.root')
+ele_kin_File      = ROOT.TFile(scaleFactorDir+'eleScaleFactors.root')
+ele_gsf_File      = ROOT.TFile(scaleFactorDir+'egammaEffi_txt_SF2D.root')
 #
 histos_LS = {
-'mu_mediumID_histo':  mu_mediumID_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_tag_combRelIsoPF04dBeta_bin0_&_tag_pt_bin0_&_tag_IsoMu20_pass"),\
-'mu_looseID_histo':   mu_looseID_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_tag_combRelIsoPF04dBeta_bin0_&_tag_pt_bin0_&_tag_IsoMu20_pass"),\
-'mu_miniIso02_histo': mu_miniIso02_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_tag_combRelIsoPF04dBeta_bin0_&_tag_pt_bin0_&_PF_pass_&_tag_IsoMu20_pass"),\
-'mu_sip3d_histo':     mu_sip3d_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_tag_combRelIsoPF04dBeta_bin0_&_tag_pt_bin0_&_PF_pass_&_tag_IsoMu20_pass"),\
-'ele_cutbased_histo': ele_kin_File.Get("CutBasedTight"),\
-'ele_miniIso01_histo':ele_kin_File.Get("MiniIso0p1_vs_AbsEta"),\
+'mu_mediumID_histo':  mu_mediumID_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0"),\
+'mu_looseID_histo':   mu_looseID_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0"),\
+'mu_miniIso02_histo': mu_miniIso02_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_Medium2016_pass"),\
+'mu_sip3d_histo':     mu_sip3d_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_Medium2016_pass"),\
+'mu_HIP_histo':       mu_HIP_File.Get("mutrksfptg10"),\
+'ele_cutbased_histo': ele_kin_File.Get("GsfElectronToTight"),\
+'ele_miniIso01_histo':ele_kin_File.Get("MVAVLooseElectronToMini"),\
+'ele_gsf_histo':ele_gsf_File.Get("EGamma_SF2D"),\
 }
 #####################
 
@@ -204,7 +216,9 @@ def getTreeFromChunk(c, skimCond, iSplit, nSplit):
 exec('allSamples=['+options.allsamples+']')
 for isample, sample in enumerate(allSamples):
   chunks, sumWeight = getChunks(sample)
-  outDir = options.targetDir+"/".join([common_skim, sample['name']])
+  targetDir = options.targetDir
+  if sample.has_key('outDirOption'): outDir = targetDir+"/".join([common_skim, sample['name']+sample['outDirOption']])
+  else: outDir = targetDir+"/".join([common_skim, sample['name']])
   if os.path.exists(outDir) and os.listdir(outDir) != [] and not options.overwrite:
     print "Found non-empty directory: %s -> skipping!"%outDir
     continue
@@ -239,7 +253,7 @@ for isample, sample in enumerate(allSamples):
   aliases = [ "met:met_pt", "metPhi:met_phi"]
 
   readVectors = [\
-    {'prefix':'LepGood', 'nMax':8, 'vars':['pt/F', 'eta/F', 'phi/F', 'pdgId/I','charge/F' ,'relIso03/F','eleCutIdSpring15_25ns_v1/I', 'SPRING15_25ns_v1/I', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz/I','eleCBID_SPRING15_25ns/I','tightId/I', 'miniRelIso/F','mass/F','sip3d/F','mediumMuonId/I', 'mvaIdSpring15/F','lostHits/I', 'convVeto/I']}
+    {'prefix':'LepGood', 'nMax':8, 'vars':['pt/F', 'eta/F', 'phi/F', 'pdgId/I','charge/F' ,'relIso03/F','eleCutIdSpring15_25ns_v1/I', 'SPRING15_25ns_v1/I', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz/I','eleCBID_SPRING15_25ns/I','tightId/I', 'miniRelIso/F','mass/F','sip3d/F','mediumMuonId/I', 'ICHEPmediumMuonId/I', 'mvaIdSpring15/F','lostHits/I', 'convVeto/I']}
   ]
   if sample['isData']:
     readVectors.append({'prefix':'Jet',  'nMax':100, 'vars':['rawPt/F','pt/F', 'eta/F', 'phi/F', 'mass/F','id/I','btagCSV/F', 'btagCMVA/F']})
@@ -259,8 +273,8 @@ for isample, sample in enumerate(allSamples):
    
     newVariables.extend(['puReweight_true/F','puReweight_true_max4/F','puReweight_true_Down/F','puReweight_true_Up/F','weight_diLepTTBar0p5/F','weight_diLepTTBar2p0/F','weight_XSecTTBar1p1/F','weight_XSecTTBar0p9/F','weight_XSecWJets1p1/F','weight_XSecWJets0p9/F', 'weight_WPolPlus10/F', 'weight_WPolMinus10/F', 'weight_TTPolPlus5/F', 'weight_TTPolMinus5/F'])
     newVariables.extend(['GenTopPt/F/-999.','GenAntiTopPt/F/-999.','TopPtWeight/F/1.','GenTTBarPt/F/-999.','GenTTBarWeight/F/1.','nGenTops/I/0.'])
-    newVariables.extend(['lepton_muSF_looseID/D/1.','lepton_muSF_mediumID/D/1.','lepton_muSF_miniIso02/D/1.','lepton_muSF_sip3d/D/1.','lepton_eleSF_cutbasedID/D/1.','lepton_eleSF_miniIso01/D/1.'])
-    newVariables.extend(['lepton_muSF_looseID_err/D/0.','lepton_muSF_mediumID_err/D/0.','lepton_muSF_miniIso02_err/D/0.','lepton_muSF_sip3d_err/D/0.','lepton_eleSF_cutbasedID_err/D/0.','lepton_eleSF_miniIso01_err/D/0.'])
+    newVariables.extend(['lepton_muSF_HIP/D/1','lepton_muSF_looseID/D/1.','lepton_muSF_mediumID/D/1.','lepton_muSF_miniIso02/D/1.','lepton_muSF_sip3d/D/1.','lepton_eleSF_cutbasedID/D/1.','lepton_eleSF_miniIso01/D/1.','lepton_eleSF_gsf/D/1.'])
+    newVariables.extend(['lepton_muSF_HIP_err/D/0.','lepton_muSF_looseID_err/D/0.','lepton_muSF_mediumID_err/D/0.','lepton_muSF_miniIso02_err/D/0.','lepton_muSF_sip3d_err/D/0.','lepton_eleSF_cutbasedID_err/D/0.','lepton_eleSF_miniIso01_err/D/0.', 'lepton_eleSF_gsf_err/D/0.', 'lepton_muSF_systematic/D/0.'])
     ### Vars for JEC ###
     corr = ["central", "up", "down"]
     vars_corr = ["ht","LT","MeT","deltaPhi_Wl"]
@@ -382,10 +396,10 @@ for isample, sample in enumerate(allSamples):
           s.eleDataSet = False
           s.weight =xsec_branch*lumiScaleFactor*genWeight
           nTrueInt = t.GetLeaf('nTrueInt').GetValue()
-          s.puReweight_true = PU_histo_70.GetBinContent(PU_histo_70.FindBin(nTrueInt))
+          s.puReweight_true = PU_histo_63.GetBinContent(PU_histo_63.FindBin(nTrueInt))
           s.puReweight_true_max4 = min(4,s.puReweight_true)
-          s.puReweight_true_Down = PU_histo_66.GetBinContent(PU_histo_66.FindBin(nTrueInt))
-          s.puReweight_true_Up = PU_histo_74.GetBinContent(PU_histo_74.FindBin(nTrueInt))
+          s.puReweight_true_Down = PU_histo_59p85.GetBinContent(PU_histo_59p85.FindBin(nTrueInt))
+          s.puReweight_true_Up = PU_histo_66p15.GetBinContent(PU_histo_66p15.FindBin(nTrueInt))
           ngenLep = t.GetLeaf('ngenLep').GetValue()
           ngenTau = t.GetLeaf('ngenTau').GetValue()
           genLeps = filter(lambda g:abs(g['grandmotherId'])==6 and abs(g['motherId'])==24,get_cmg_genLeps(t))
@@ -432,7 +446,7 @@ for isample, sample in enumerate(allSamples):
         s.nLooseHardLeptons = len(looseHardLepInd)
         s.nTightSoftLeptons = len(tightSoftLepInd)
         s.nTightHardLeptons = len(tightHardLepInd)
-        vars = ['pt', 'eta', 'phi','mass' ,'charge' ,'miniRelIso','relIso03', 'pdgId', 'eleCutIdSpring15_25ns_v1']
+        vars = ['pt', 'eta', 'phi','mass' ,'charge' ,'miniRelIso','relIso03', 'pdgId', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz']
         allLeptons = [getObjDict(t, 'LepGood_', vars, i) for i in looseLepInd]
         looseSoftLep = [getObjDict(t, 'LepGood_', vars, i) for i in looseSoftLepInd] 
         looseHardLep = [getObjDict(t, 'LepGood_', vars, i) for i in looseHardLepInd]
@@ -450,7 +464,7 @@ for isample, sample in enumerate(allSamples):
           #s.leptonPdg = r.LepGood_pdgId[leadingLepInd]
           s.leptonPdg = (-1)*r.LepGood_pdgId[leadingLepInd] if (sample['name']=="ST_tchannel_top_4f_leptonDecays_powheg") else r.LepGood_pdgId[leadingLepInd]
           s.leptonMass= r.LepGood_mass[leadingLepInd]
-          s.leptonSPRING15_25ns_v1= r.LepGood_eleCutIdSpring15_25ns_v1[leadingLepInd]
+          s.leptonSPRING15_25ns_v1= r.LepGood_eleCBID_SPRING15_25ns_ConvVetoDxyDz[leadingLepInd]
           s.st = r.met_pt + s.leptonPt
         s.singleLeptonic = s.nTightHardLeptons==1
         if s.singleLeptonic:

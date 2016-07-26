@@ -16,20 +16,18 @@ ROOT.gSystem.Load("libFWCoreFWLite.so")
 ROOT.AutoLibraryLoader.enable()
 
 from Workspace.HEPHYPythonTools.helpers import getChunks
-#from Workspace.RA4Analysis.cmgTuples_Spring15_25ns_fromArturV2 import *
-#from Workspace.RA4Analysis.cmgTuples_data_25ns_fromArtur import *
-#from Workspace.RA4Analysis.cmgTuples_Spring15_MiniAODv2_25ns import *
-#from Workspace.RA4Analysis.cmgTuples_Data25ns_miniAODv2 import *
 
 from Workspace.RA4Analysis.cmgTuples_Spring16_MiniAODv2 import *
-from Workspace.RA4Analysis.cmgTuples_Data25ns_PromtV2 import *
+from Workspace.RA4Analysis.cmgTuples_Data25ns_PromptRecoV2 import *
 
 
 from btagEfficiency import *
 from readVetoEventList import *
 from systematics_helper import calc_btag_systematics, calc_LeptonScale_factors_and_systematics, calc_TopPt_Weights , calcDLDictionary, calc_diLep_contributions , fill_branch_WithJEC
 
-bTagEffFile = '/data/dspitzbart/Results2015/MCEff_skim_pkl'
+bTagEffFile     = '/data/dspitzbart/Spring16/btagEfficiency/effs_presel_JECv6_pkl'
+scaleFactorDir  = '$CMSSW_BASE/src/Workspace/RA4Analysis/cmgPostProcessing/data/'
+
 try:
   mcEffDict = pickle.load(file(bTagEffFile))
 except IOError:
@@ -43,7 +41,7 @@ separateBTagWeights = True
 defSampleStr = "TTJets_LO_HT600to800_25ns"
 
 #subDir = "postProcessed_Spring16_antiSelection_3fb_v2"
-subDir = "postProcessed_Spring16_antiSelection_TTJetsComb"
+subDir = "postProcessing_Run2016BCD_antiSelection"
 
 #branches to be kept for data and MC
 branchKeepStrings_DATAMC = ["run", "lumi", "evt", "isData", "rho", "nVert",
@@ -72,7 +70,7 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("--samples", dest="allsamples", default=defSampleStr, type="string", action="store", help="samples:Which samples.")
 parser.add_option("--inputTreeName", dest="inputTreeName", default="treeProducerSusySingleLepton", type="string", action="store", help="samples:Which samples.")
-parser.add_option("--targetDir", dest="targetDir", default="/data/"+username+"/cmgTuples/"+subDir+'/', type="string", action="store", help="target directory.")
+parser.add_option("--targetDir", dest="targetDir", default="/afs/hephy.at/data/"+username+"01/cmgTuples/"+subDir+'/', type="string", action="store", help="target directory.")
 parser.add_option("--skim", dest="skim", default="", type="string", action="store", help="any skim condition?")
 parser.add_option("--leptonSelection", dest="leptonSelection", default="hard", type="string", action="store", help="which lepton selection? 'soft', 'hard', 'none', 'dilep'?")
 parser.add_option("--small", dest="small", default = False, action="store_true", help="Just do a small subset.")
@@ -86,6 +84,7 @@ parser.add_option("--manScaleFactor", dest="manScaleFactor", default = 1, action
 assert options.leptonSelection in ['soft', 'hard', 'none', 'dilep'], "Unknown leptonSelection: %s"%options.leptonSelection
 skimCond = "(1)"
 ht500 = "Sum$(Jet_pt)>500"
+common_skim = 'HT500'
 if options.skim.startswith('met'):
   skimCond = "met_pt>"+str(float(options.skim[3:]))
 if options.skim=='HT400':
@@ -97,9 +96,9 @@ if options.skim=='HT500':
 if options.skim=='LHEHT600':
   skimCond = "lheHTIncoming>600"
 if options.skim=='LHEHTsm600':
-  skimCond = "lheHTIncoming<=600"
+  skimCond = "lheHTIncoming<=600&&"+ht500
 if options.skim=='LHEHTlg600':
-  skimCond = "lheHTIncoming>600"
+  skimCond = "lheHTIncoming>600&&"+ht500
 
 
 ####dilep skim##
@@ -149,32 +148,36 @@ if sys.argv[0].count('ipython'):
 #evt_veto_list = evt_veto_list()
 
 ###For PU reweight###
-#PU_File = ROOT.TFile("/data/easilar/tuples_from_Artur/JECv6recalibrateMET_2100pb/trig_skim/PUhistos/ratio_PU.root")
-#PU_histo = PU_File.Get("h_ratio")
-#PU_dir = "/data/easilar/tuples_from_Artur/JECv6recalibrateMET_2p2fb/PUhistos/"
-#PU_File_66mb = ROOT.TFile(PU_dir+"/pileUp_66mb_map.root")
-#PU_File_70mb = ROOT.TFile(PU_dir+"/pileUp_70mb_map.root")
-#PU_File_74mb = ROOT.TFile(PU_dir+"/pileUp_74mb_map.root")
-#PU_histo_66 = PU_File_66mb.Get("h_ratio_66")
-#PU_histo_70 = PU_File_70mb.Get("h_ratio_70")
-#PU_histo_74 = PU_File_74mb.Get("h_ratio_74")
+PU_dir = "/data/easilar/PU_Histos/"
+PU_File_59p85mb = ROOT.TFile(PU_dir+"/h_ratio_59p85.root")
+PU_File_63mb = ROOT.TFile(PU_dir+"/h_ratio_63.root")
+PU_File_66p15mb = ROOT.TFile(PU_dir+"/h_ratio_66p15.root")
+PU_histo_59p85 = PU_File_59p85mb.Get("h_ratio")
+PU_histo_63 = PU_File_63mb.Get("h_ratio")
+PU_histo_66p15 = PU_File_66p15mb.Get("h_ratio")
 #####################
 
-#####################
 ###For Lepton SF#####
-mu_mediumID_File = ROOT.TFile("/data/easilar/SF2015/TnP_MuonID_NUM_MediumID_DENOM_generalTracks_VAR_map_pt_eta.root")
-mu_looseID_File = ROOT.TFile("/data/easilar/SF2015/TnP_MuonID_NUM_LooseID_DENOM_generalTracks_VAR_map_pt_eta-2.root")
-mu_miniIso02_File = ROOT.TFile("/data/easilar/SF2015/TnP_MuonID_NUM_MiniIsoTight_DENOM_LooseID_VAR_map_pt_eta.root")
-mu_sip3d_File = ROOT.TFile("/data/easilar/SF2015/TnP_MuonID_NUM_TightIP3D_DENOM_LooseID_VAR_map_pt_eta.root")
-ele_kin_File = ROOT.TFile("/data/easilar/SF2015/kinematicBinSFele.root")
+mu_mediumID_File  = ROOT.TFile(scaleFactorDir+'TnP_MuonID_NUM_MediumID_DENOM_generalTracks_VAR_map_pt_eta.root')
+mu_looseID_File   = ROOT.TFile(scaleFactorDir+'TnP_MuonID_NUM_LooseID_DENOM_generalTracks_VAR_map_pt_eta.root')
+mu_miniIso02_File = ROOT.TFile(scaleFactorDir+'TnP_MuonID_NUM_MiniIsoTight_DENOM_MediumID_VAR_map_pt_eta.root')
+mu_sip3d_File     = ROOT.TFile(scaleFactorDir+'TnP_MuonID_NUM_TightIP3D_DENOM_MediumID_VAR_map_pt_eta.root')
+mu_HIP_File       = ROOT.TFile(scaleFactorDir+'general_tracks_and_early_general_tracks_corr_ratio.root')
+ele_kin_File      = ROOT.TFile(scaleFactorDir+'eleScaleFactors.root')
+ele_gsf_File      = ROOT.TFile(scaleFactorDir+'egammaEffi_txt_SF2D.root')
 #
-mu_mediumID_histo = mu_mediumID_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_tag_combRelIsoPF04dBeta_bin0_&_tag_pt_bin0_&_tag_IsoMu20_pass")
-mu_looseID_histo = mu_looseID_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_tag_combRelIsoPF04dBeta_bin0_&_tag_pt_bin0_&_tag_IsoMu20_pass")
-mu_miniIso02_histo = mu_miniIso02_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_tag_combRelIsoPF04dBeta_bin0_&_tag_pt_bin0_&_PF_pass_&_tag_IsoMu20_pass")
-mu_sip3d_histo = mu_sip3d_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_tag_combRelIsoPF04dBeta_bin0_&_tag_pt_bin0_&_PF_pass_&_tag_IsoMu20_pass")
-ele_cutbased_histo = ele_kin_File.Get("CutBasedTight")
-ele_miniIso01_histo = ele_kin_File.Get("MiniIso0p1_vs_AbsEta")
+histos_LS = {
+'mu_mediumID_histo':  mu_mediumID_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0"),\
+'mu_looseID_histo':   mu_looseID_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0"),\
+'mu_miniIso02_histo': mu_miniIso02_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_Medium2016_pass"),\
+'mu_sip3d_histo':     mu_sip3d_File.Get("pt_abseta_PLOT_pair_probeMultiplicity_bin0_&_Medium2016_pass"),\
+'mu_HIP_histo':       mu_HIP_File.Get("mutrksfptg10"),\
+'ele_cutbased_histo': ele_kin_File.Get("GsfElectronToTight"),\
+'ele_miniIso01_histo':ele_kin_File.Get("MVAVLooseElectronToMini"),\
+'ele_gsf_histo':      ele_gsf_File.Get("EGamma_SF2D"),\
+}
 #####################
+
 
 maxConsideredBTagWeight = options.btagWeight
 calcSystematics = options.systematics
@@ -205,7 +208,10 @@ for isample, sample in enumerate(allSamples):
   chunks, sumWeight = getChunks(sample)
   #chunks, nTotEvents = getChunksFromDPM(sample, options.inputTreeName)
 #  print "Chunks:" , chunks 
-  outDir = options.targetDir+'/'+"/".join([options.skim, options.leptonSelection, sample['name']])
+  targetDir = options.targetDir
+  if sample.has_key('outDirOption'): outDir = targetDir+"/".join([common_skim, sample['name']+sample['outDirOption']])
+  else: outDir = targetDir+"/".join([common_skim, sample['name']])
+  #outDir = options.targetDir+'/'+"/".join([options.skim, options.leptonSelection, sample['name']])
   if os.path.exists(outDir) and os.listdir(outDir) != [] and not options.overwrite:
     print "Found non-empty directory: %s -> skipping!"%outDir
     continue
@@ -229,8 +235,8 @@ for isample, sample in enumerate(allSamples):
   aliases = [ "met:met_pt", "metPhi:met_phi"]
 
   readVectors = [\
-    {'prefix':'LepGood', 'nMax':8, 'vars':['pt/F', 'eta/F', 'phi/F', 'pdgId/I', 'relIso03/F','SPRING15_25ns_v1/I','eleCBID_SPRING15_25ns/I', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz/I', 'tightId/I', 'miniRelIso/F','mass/F','sip3d/F','mediumMuonId/I', 'mvaIdSpring15/F','lostHits/I', 'convVeto/I', 'charge/I', 'hOverE/F']},
-    {'prefix':'LepOther', 'nMax':8, 'vars':['pt/F', 'eta/F', 'phi/F', 'pdgId/I', 'relIso03/F','eleCBID_SPRING15_25ns/I', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz/I' ,'tightId/I', 'miniRelIso/F','mass/F','sip3d/F','mediumMuonId/I', 'lostHits/I', 'convVeto/I', 'charge/I', 'hOverE/F']},
+    {'prefix':'LepGood', 'nMax':8, 'vars':['pt/F', 'eta/F', 'phi/F', 'pdgId/I', 'relIso03/F','SPRING15_25ns_v1/I','eleCBID_SPRING15_25ns/I', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz/I', 'tightId/I', 'miniRelIso/F','mass/F','sip3d/F','mediumMuonId/I', 'ICHEPmediumMuonId/I', 'mvaIdSpring15/F','lostHits/I', 'convVeto/I', 'charge/I', 'hOverE/F']},
+    {'prefix':'LepOther', 'nMax':8, 'vars':['pt/F', 'eta/F', 'phi/F', 'pdgId/I', 'relIso03/F','eleCBID_SPRING15_25ns/I', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz/I' ,'tightId/I', 'miniRelIso/F','mass/F','sip3d/F','mediumMuonId/I', 'ICHEPmediumMuonId/I', 'lostHits/I', 'convVeto/I', 'charge/I', 'hOverE/F']},
     {'prefix':'Jet',  'nMax':100, 'vars':['pt/F', 'eta/F', 'phi/F', 'id/I','btagCSV/F', 'btagCMVA/F']},
   ]
   if not sample['isData']: 
@@ -245,8 +251,8 @@ for isample, sample in enumerate(allSamples):
   if options.leptonSelection.lower() == 'none':
     newVariables.extend( ['nLep/I', 'nVeto/I', 'nTightLep/I', 'nTightEl/I', 'nTightMu/I', 'nEl/I', 'nMu/I', 'Selected/I'] )
     newVariables.extend( ['deltaPhi_Wl/F', 'Lp/F', 'Lt/F', 'nBJetMediumCSV30/I','nJet30clean/I','htJet30clean/F', 'st/F', 'leptonPt/F','leptonMiniRelIso/F','leptonRelIso03/F' ,'leptonEta/F', 'leptonPhi/F', 'leptonPdg/I', 'leptonInd/I', 'leptonMass/F','leptonHoverE/F', 'leptonEt/F', 'lslJet80/I', 'Jet1_pt/F', 'Jet2_pt/F', 'nJet30nonClean/I', 'htJet30nonClean/F', 'singleMuonic/I', 'singleElectronic/I', 'singleLeptonic/I' ]) #, 'mt2w/F'] )
-    newVariables.extend( ['lepton_muSF_looseID/D/1.','lepton_muSF_mediumID/D/1.','lepton_muSF_miniIso02/D/1.','lepton_muSF_sip3d/D/1.','lepton_eleSF_cutbasedID/D/1.','lepton_eleSF_miniIso01/D/1.'])
-    newVariables.extend( ['lepton_muSF_looseID_err/D/0.','lepton_muSF_mediumID_err/D/0.','lepton_muSF_miniIso02_err/D/0.','lepton_muSF_sip3d_err/D/0.','lepton_eleSF_cutbasedID_err/D/0.','lepton_eleSF_miniIso01_err/D/0.'])
+    newVariables.extend( ['lepton_muSF_HIP/D/1.','lepton_muSF_looseID/D/1.','lepton_muSF_mediumID/D/1.','lepton_muSF_miniIso02/D/1.','lepton_muSF_sip3d/D/1.','lepton_eleSF_cutbasedID/D/1.','lepton_eleSF_miniIso01/D/1.', 'lepton_eleSF_gsf/D/1.'])
+    newVariables.extend( ['lepton_muSF_HIP_err/D/0.','lepton_muSF_looseID_err/D/0.','lepton_muSF_mediumID_err/D/0.','lepton_muSF_miniIso02_err/D/0.','lepton_muSF_sip3d_err/D/0.','lepton_eleSF_cutbasedID_err/D/0.','lepton_eleSF_miniIso01_err/D/0.', 'lepton_eleSF_gsf_err/D/0.', 'lepton_muSF_systematic/D/0.'])
 
     if calcSystematics:
       #newVariables.extend( ["weightBTag/F", "weightBTag_SF/F", "weightBTag_SF_b_Up/F", "weightBTag_SF_b_Down/F", "weightBTag_SF_light_Up/F", "weightBTag_SF_light_Down/F"])
@@ -333,10 +339,10 @@ for isample, sample in enumerate(allSamples):
           s.muonDataSet = False
           s.eleDataSet = False
           nTrueInt = t.GetLeaf('nTrueInt').GetValue()
-          #s.puReweight_true = PU_histo_70.GetBinContent(PU_histo_70.FindBin(nTrueInt))
-          #s.puReweight_true_max4 = min(4,s.puReweight_true)
-          #s.puReweight_true_Down = PU_histo_66.GetBinContent(PU_histo_66.FindBin(nTrueInt))
-          #s.puReweight_true_Up = PU_histo_74.GetBinContent(PU_histo_74.FindBin(nTrueInt))
+          s.puReweight_true = PU_histo_63.GetBinContent(PU_histo_63.FindBin(nTrueInt))
+          s.puReweight_true_max4 = min(4,s.puReweight_true)
+          s.puReweight_true_Down = PU_histo_59p85.GetBinContent(PU_histo_59p85.FindBin(nTrueInt))
+          s.puReweight_true_Up = PU_histo_66p15.GetBinContent(PU_histo_66p15.FindBin(nTrueInt))
 
           #if "TTJets" in sample["name"] :
           #  s.weight = lumiScaleFactor*genWeight
@@ -369,7 +375,7 @@ for isample, sample in enumerate(allSamples):
           s.nTightSoftLeptons = len(tightSoftLepInd)
           s.nTightHardLeptons = len(tightHardLepInd)
           #print "tightHardLepInd:" , tightHardLepInd
-          vars = ['pt', 'eta', 'phi', 'miniRelIso','relIso03', 'pdgId', 'SPRING15_25ns_v1', 'mass']
+          vars = ['pt', 'eta', 'phi', 'miniRelIso','relIso03', 'pdgId', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz', 'mass']
           allLeptons = [getObjDict(t, 'LepGood_', vars, i) for i in looseLepInd]
           looseSoftLep = [getObjDict(t, 'LepGood_', vars, i) for i in looseSoftLepInd] 
           looseHardLep = [getObjDict(t, 'LepGood_', vars, i) for i in looseHardLepInd]
@@ -390,7 +396,7 @@ for isample, sample in enumerate(allSamples):
             s.leptonPhi = r.LepGood_phi[leadingLepInd]
             s.leptonPdg = r.LepGood_pdgId[leadingLepInd]
             s.leptonMass= r.LepGood_mass[leadingLepInd]
-            s.leptonSPRING15_25ns_v1= r.LepGood_SPRING15_25ns_v1[leadingLepInd]
+            s.leptonSPRING15_25ns_v1= r.LepGood_eleCBID_SPRING15_25ns_ConvVetoDxyDz[leadingLepInd]
             s.st = r.met_pt + s.leptonPt
           s.singleLeptonic = s.nTightHardLeptons==1
           if s.singleLeptonic:
@@ -451,7 +457,8 @@ for isample, sample in enumerate(allSamples):
             s.leptonInd = leadingLepInd 
             s.leptonEta = r.LepGood_eta[leadingLepInd]
             s.leptonPhi = r.LepGood_phi[leadingLepInd]
-            s.leptonPdg = r.LepGood_pdgId[leadingLepInd]
+            #s.leptonPdg = r.LepGood_pdgId[leadingLepInd]
+            s.leptonPdg = (-1)*r.LepGood_pdgId[leadingLepInd] if (sample['name']=="ST_tchannel_top_4f_leptonDecays_powheg") else r.LepGood_pdgId[leadingLepInd]
             s.leptonMass= r.LepGood_mass[leadingLepInd]
             s.st = r.met_pt + s.leptonPt
           s.singleLeptonic = s.nTightSoftLeptons==1
@@ -483,7 +490,7 @@ for isample, sample in enumerate(allSamples):
         if options.leptonSelection == 'none':
 
           ### LEPTONS
-          vars = ['pt', 'eta', 'phi', 'mass', 'miniRelIso','relIso03', 'pdgId', 'eleCBID_SPRING15_25ns', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz','mediumMuonId', 'sip3d', 'hOverE', 'eleCutIdSpring15_25ns_v1']
+          vars = ['pt', 'eta', 'phi', 'mass', 'miniRelIso','relIso03', 'pdgId', 'eleCBID_SPRING15_25ns', 'eleCBID_SPRING15_25ns_ConvVetoDxyDz','ICHEPmediumMuonId', 'sip3d', 'hOverE', 'eleCutIdSpring15_25ns_v1']
           leptonIndices = [i for i in range(r.nLepGood)]
           leptons = [getObjDict(t, 'LepGood_', vars, i) for i in leptonIndices]
           nlep = len(leptonIndices)
@@ -522,7 +529,7 @@ for isample, sample in enumerate(allSamples):
               if (abs(lep['eta'])>2.4): continue
 
               #ID, IP and Iso check:
-              passID = True if lep['mediumMuonId'] == 1 else False
+              passID = True if lep['ICHEPmediumMuonId'] == 1 else False
               passIso = True if lep['miniRelIso'] < muMiniIsoCut else False
               passIP = True if lep['sip3d'] < goodMu_sip3d else False
 
@@ -551,9 +558,9 @@ for isample, sample in enumerate(allSamples):
               passConv = False
 
               #electron CutBased ID, ConvVeto, dxy,dz already included
-              passTightID = True if (lep['eleCutIdSpring15_25ns_v1'] == 4) else False
-              passMediumID = True if (lep['eleCutIdSpring15_25ns_v1'] >= 3) else False
-              passVetoID = True if (lep['eleCutIdSpring15_25ns_v1'] >= 1) else False
+              passTightID =   True if (lep['eleCBID_SPRING15_25ns_ConvVetoDxyDz'] == 4) else False
+              passMediumID =  True if (lep['eleCBID_SPRING15_25ns_ConvVetoDxyDz'] >= 3) else False
+              passVetoID =    True if (lep['eleCBID_SPRING15_25ns_ConvVetoDxyDz'] >= 1) else False
 
               #selected electrons
               if passTightID:
@@ -621,8 +628,8 @@ for isample, sample in enumerate(allSamples):
               if lep['miniRelIso'] > 0.4: continue
 
               #use the eleCBID_SPRING15_25ns, ConvVeto, dxy, dz an not included
-              passMediumIDother = True if (lep['eleCutIdSpring15_25ns_v1'] >= 3) else False
-              passVetoIDother = True if (lep['eleCutIdSpring15_25ns_v1'] >= 1) else False
+              passMediumIDother = True if (lep['eleCBID_SPRING15_25ns_ConvVetoDxyDz'] >= 3) else False
+              passVetoIDother =   True if (lep['eleCBID_SPRING15_25ns_ConvVetoDxyDz'] >= 1) else False
 
               #Anti-selected electrons with CBID <3
               if not passMediumIDother:
@@ -721,20 +728,51 @@ for isample, sample in enumerate(allSamples):
             s.singleMuonic     = False
             s.singleElectronic = False
 
+          mu_mediumID_histo   = histos_LS['mu_mediumID_histo']
+          mu_looseID_histo    = histos_LS['mu_looseID_histo']
+          mu_miniIso02_histo  = histos_LS['mu_miniIso02_histo']
+          mu_sip3d_histo      = histos_LS['mu_sip3d_histo']
+          ele_cutbased_histo  = histos_LS['ele_cutbased_histo']
+          ele_miniIso01_histo = histos_LS['ele_miniIso01_histo']
+          mu_HIP_histo        = histos_LS['mu_HIP_histo']
+          ele_gsf_histo       = histos_LS['ele_gsf_histo']
+          
           if s.singleMuonic and s.leptonPt<120:
-            s.lepton_muSF_mediumID = mu_mediumID_histo.GetBinContent(mu_mediumID_histo.FindBin(s.leptonPt,abs(s.leptonEta))) 
-            s.lepton_muSF_looseID =  mu_looseID_histo.GetBinContent(mu_looseID_histo.FindBin(s.leptonPt,abs(s.leptonEta))) 
-            s.lepton_muSF_miniIso02 =  mu_miniIso02_histo.GetBinContent(mu_miniIso02_histo.FindBin(s.leptonPt,abs(s.leptonEta))) 
-            s.lepton_muSF_sip3d =  mu_sip3d_histo.GetBinContent(mu_sip3d_histo.FindBin(s.leptonPt,abs(s.leptonEta))) 
-            s.lepton_muSF_mediumID_err =  mu_mediumID_histo.GetBinError(mu_mediumID_histo.FindBin(s.leptonPt,abs(s.leptonEta))) 
-            s.lepton_muSF_looseID_err =  mu_looseID_histo.GetBinError(mu_looseID_histo.FindBin(s.leptonPt,abs(s.leptonEta))) 
-            s.lepton_muSF_miniIso02_err =  mu_miniIso02_histo.GetBinError(mu_miniIso02_histo.FindBin(s.leptonPt,abs(s.leptonEta))) 
-            s.lepton_muSF_sip3d_err =  mu_sip3d_histo.GetBinError(mu_sip3d_histo.FindBin(s.leptonPt,abs(s.leptonEta))) 
-          if s.singleElectronic:
-            s.lepton_eleSF_cutbasedID = ele_cutbased_histo.GetBinContent(ele_cutbased_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
-            s.lepton_eleSF_miniIso01 = ele_miniIso01_histo.GetBinContent(ele_miniIso01_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+            s.lepton_muSF_mediumID      = mu_mediumID_histo.GetBinContent(mu_mediumID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+            s.lepton_muSF_looseID       = mu_looseID_histo.GetBinContent(mu_looseID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+            s.lepton_muSF_miniIso02     = mu_miniIso02_histo.GetBinContent(mu_miniIso02_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+            s.lepton_muSF_sip3d         = mu_sip3d_histo.GetBinContent(mu_sip3d_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+            s.lepton_muSF_HIP           = mu_HIP_histo.GetBinContent(mu_HIP_histo.FindBin(s.leptonEta))
+            s.lepton_muSF_mediumID_err  = mu_mediumID_histo.GetBinError(mu_mediumID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+            s.lepton_muSF_looseID_err   = mu_looseID_histo.GetBinError(mu_looseID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+            s.lepton_muSF_miniIso02_err = mu_miniIso02_histo.GetBinError(mu_miniIso02_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+            s.lepton_muSF_sip3d_err     = mu_sip3d_histo.GetBinError(mu_sip3d_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+            s.lepton_muSF_HIP_err       = mu_HIP_histo.GetBinError(mu_HIP_histo.FindBin(s.leptonEta))
+          if s.singleMuonic and s.leptonPt>=120:
+            s.lepton_muSF_mediumID      = mu_mediumID_histo.GetBinContent(mu_mediumID_histo.FindBin(119,abs(s.leptonEta)))
+            s.lepton_muSF_looseID       = mu_looseID_histo.GetBinContent(mu_looseID_histo.FindBin(119,abs(s.leptonEta)))
+            s.lepton_muSF_miniIso02     = mu_miniIso02_histo.GetBinContent(mu_miniIso02_histo.FindBin(119,abs(s.leptonEta)))
+            s.lepton_muSF_sip3d         = mu_sip3d_histo.GetBinContent(mu_sip3d_histo.FindBin(119,abs(s.leptonEta)))
+            s.lepton_muSF_HIP           = mu_HIP_histo.GetBinContent(mu_HIP_histo.FindBin(s.leptonEta))
+            s.lepton_muSF_mediumID_err  = mu_mediumID_histo.GetBinError(mu_mediumID_histo.FindBin(119,abs(s.leptonEta)))
+            s.lepton_muSF_looseID_err   = mu_looseID_histo.GetBinError(mu_looseID_histo.FindBin(119,abs(s.leptonEta)))
+            s.lepton_muSF_miniIso02_err = mu_miniIso02_histo.GetBinError(mu_miniIso02_histo.FindBin(119,abs(s.leptonEta)))
+            s.lepton_muSF_HIP_err       = mu_HIP_histo.GetBinError(mu_HIP_histo.FindBin(s.leptonEta))
+          if s.singleElectronic and s.leptonEt<200:
+            s.lepton_eleSF_cutbasedID     = ele_cutbased_histo.GetBinContent(ele_cutbased_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+            s.lepton_eleSF_miniIso01      = ele_miniIso01_histo.GetBinContent(ele_miniIso01_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+            s.lepton_eleSF_gsf            = ele_gsf_histo.GetBinContent(ele_gsf_histo.FindBin(s.leptonEta,100)) ##pt independent
             s.lepton_eleSF_cutbasedID_err = ele_cutbased_histo.GetBinError(ele_cutbased_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
-            s.lepton_eleSF_miniIso01_err = ele_miniIso01_histo.GetBinError(ele_miniIso01_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+            s.lepton_eleSF_miniIso01_err  = ele_miniIso01_histo.GetBinError(ele_miniIso01_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+            s.lepton_eleSF_gsf_err        = ele_gsf_histo.GetBinError(ele_gsf_histo.FindBin(s.leptonEta,100)) ##pt independent
+          if s.singleElectronic and s.leptonEt>=200:
+            s.lepton_eleSF_cutbasedID     = ele_cutbased_histo.GetBinContent(ele_cutbased_histo.FindBin(199,abs(s.leptonEta)))
+            s.lepton_eleSF_miniIso01      = ele_miniIso01_histo.GetBinContent(ele_miniIso01_histo.FindBin(199,abs(s.leptonEta)))
+            s.lepton_eleSF_gsf            = ele_gsf_histo.GetBinContent(ele_gsf_histo.FindBin(s.leptonEta,100)) ##pt independent
+            s.lepton_eleSF_cutbasedID_err = ele_cutbased_histo.GetBinError(ele_cutbased_histo.FindBin(199,abs(s.leptonEta)))
+            s.lepton_eleSF_miniIso01_err  = ele_miniIso01_histo.GetBinError(ele_miniIso01_histo.FindBin(199,abs(s.leptonEta)))
+            s.lepton_eleSF_gsf_err        = ele_gsf_histo.GetBinError(ele_gsf_histo.FindBin(s.leptonEta,100)) ##pt independent
+          
 
           ### JETS
           j_list=['eta','pt','phi','btagCMVA', 'btagCSV','id']

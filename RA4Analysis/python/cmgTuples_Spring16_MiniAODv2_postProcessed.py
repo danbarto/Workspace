@@ -1,7 +1,9 @@
 import copy, os, sys
-dirEce = '/data/easilar/cmgTuples/postProcessing_Spring16_V6/HT500LT250Skim/'
-dirEce2 = '/data/easilar/cmgTuples/postProcessing_Spring16_FIXED_v2/'
-dirDaniel = '/data/dspitzbart/cmgTuples/postProcessing_Spring16_V6/HT500LT250Skim/'
+#dirEce = '/data/easilar/cmgTuples/postProcessing_Spring16_V6/HT500LT250Skim/'
+#dirEce2 = '/data/easilar/cmgTuples/postProcessing_Spring16_FIXED_v2/'
+dirDaniel = '/afs/hephy.at/data/dspitzbart01/cmgTuples/postProcessing_Spring16_JECv6_v1/HT500LT250Skim/'
+#dirDaniel = '/data/dspitzbart/cmgTuples/postProcessing_Spring16_JECv6/HT500LT250Skim/'
+dirEce = '/data/easilar/cmgTuples/postProcessing_Spring16_JECv6/HT500LT250Skim/'
 
 ####usual HT combination####
 
@@ -40,7 +42,7 @@ TTJets_singleLep = {\
 "TTJets_SingleLeptonFromT_full",
 "TTJets_SingleLeptonFromTbar_full",
 ],
-'dir' : dirEce,
+'dir' : dirDaniel,
 }
 
 TTJets_diLep = {\
@@ -48,7 +50,7 @@ TTJets_diLep = {\
 "bins" : [
 "TTJets_DiLepton",
 ],
-'dir' : dirEce,
+'dir' : dirDaniel,
 }
 
 TTJets_Lep = {\
@@ -58,7 +60,7 @@ TTJets_Lep = {\
 "TTJets_SingleLeptonFromTbar_full",
 "TTJets_DiLepton",
 ],
-'dir' : dirEce,
+'dir' : dirDaniel,
 }
 
 TTJets_Comb = {\
@@ -88,7 +90,7 @@ WJetsHTToLNu = {\
 "WJetsToLNu_HT1200to2500",
 "WJetsToLNu_HT2500toInf",
 ],
-'dir' : dirEce,
+'dir' : dirDaniel,
 }
 
 #singleTop_inclusive = {\
@@ -97,7 +99,7 @@ WJetsHTToLNu = {\
 #"ST_tchannel_antitop_4f_inclusiveDecays_powheg",
 #"ST_tW_antitop_5f_inclusiveDecays_powheg",
 #],
-#'dir' : dirEce,
+#'dir' : dirDaniel,
 #}
 
 singleTop_lep = {\
@@ -109,7 +111,7 @@ singleTop_lep = {\
 "ST_tW_antitop_5f_inclusiveDecays_powheg",
 "ST_tW_top_5f_inclusiveDecays_powheg",
 ],
-'dir' : dirEce,
+'dir' : dirDaniel,
 }
 
 
@@ -121,7 +123,7 @@ DY_HT = {\
 "DYJetsToLL_M_50_HT_400to600",
 "DYJetsToLL_M_50_HT_600toInf",
 ],
-'dir' : dirEce,
+'dir' : dirDaniel,
 }
 
 
@@ -136,18 +138,18 @@ QCDHT = {\
 "QCD_HT500to700",
 "QCD_HT700to1000",
 ],
-'dir' : dirEce,
+'dir' : dirDaniel,
 }
 
-#diBoson = {\
-#"name":"diBoson",
-#"bins":[
-#"DiBoson_WW",
-#"DiBoson_WZ",
-#"DiBoson_ZZ",
-#],
-#'dir': dirEce,
-#}
+diBoson = {\
+"name":"diBoson",
+"bins":[
+"DiBoson_WW",
+"DiBoson_WZ",
+"DiBoson_ZZ",
+],
+'dir': dirDaniel,
+}
 
 TTV = {
 "name":"TTV",
@@ -155,34 +157,37 @@ TTV = {
 "TTWToLNu",
 "TTWToQQ",
 "TTZToLLNuNu",
-#"TTZToQQ",
+"TTZToQQ",
 ],
-'dir' : dirEce,
+'dir' : dirDaniel,
 }
 
 allSignalStrings=[\
-"T5qqqqVV_mGluino_600To675_mLSP_1to550",\
-"T5qqqqVV_mGluino_700To775_mLSP_1To650",\
-"T5qqqqVV_mGluino_800To975_mLSP_1To850",\
-"T5qqqqVV_mGluino_1000To1075_mLSP_1To950",\
-"T5qqqqVV_mGluino_1100To1175_mLSP_1to1050",\
-"T5qqqqVV_mGluino_1200To1275_mLSP_1to1150",\
-"T5qqqqVV_mGluino_1300To1375_mLSP_1to1250",\
-"T5qqqqVV_mGluino_1400To1550_mLSP_1To1275",\
-"T5qqqqVV_mGluino_1600To1750_mLSP_1To950",\
+#"T5qqqqVV_mGluino_600To675_mLSP_1to550",\
+#"T5qqqqVV_mGluino_700To775_mLSP_1To650",\
+#"T5qqqqVV_mGluino_800To975_mLSP_1To850",\
+#"T5qqqqVV_mGluino_1000To1075_mLSP_1To950",\
+#"T5qqqqVV_mGluino_1100To1175_mLSP_1to1050",\
+#"T5qqqqVV_mGluino_1200To1275_mLSP_1to1150",\
+#"T5qqqqVV_mGluino_1300To1375_mLSP_1to1250",\
+#"T5qqqqVV_mGluino_1400To1550_mLSP_1To1275",\
+#"T5qqqqVV_mGluino_1600To1750_mLSP_1To950",\
+"SMS_T5qqqqVV_TuneCUETP8M1_v1",\
 ]
 
 from Workspace.HEPHYPythonTools.user import username
 import pickle
 
-pickleDir = '/data/easilar/Spring15/25ns/'
+#pickleDir = '/data/easilar/Spring15/25ns/'
+pickleDir = '/afs/hephy.at/data/easilar01/Ra40b/pickleDir/T5qqqqWW_mass_nEvents_xsec_pkl'
 #signal_dir = '/data/easilar/cmgTuples/postProcessing_Signals/signal/'
+#signal_dir = '/data/easilar/cmgTuples/postProcessing_Signals_v4/signal/'
 signal_dir = '/data/easilar/cmgTuples/postProcessing_Signals_v4/signal/'
 
 def getSignalSample(signal):
   if signal in allSignalStrings:
     sig = {}
-    mass_dict = pickle.load(file(pickleDir+signal+'_mass_nEvents_xsec_pkl'))
+    mass_dict = pickle.load(file(pickleDir))
     for mglu in mass_dict.keys() :
       sig[mglu] = {}
       for mlsp in mass_dict[mglu].keys() :

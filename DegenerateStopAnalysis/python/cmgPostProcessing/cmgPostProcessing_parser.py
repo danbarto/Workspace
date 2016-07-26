@@ -47,8 +47,11 @@ def get_parser():
     
     argParser.add_argument('--overwriteOutputFiles',
         action='store_true',
-        help="Overwrite existing output files, bool flag set to True  if used")
+        help="Overwrite existing output files for the requested chunk range, bool flag set to True  if used")
     
+    argParser.add_argument('--overwriteOutputDir',
+        action='store_true',
+        help="Overwrite the whole existing output directory, bool flag set to True  if used")
     
     argParser.add_argument('--cmgTuples',
         dest='cmgTuples',
@@ -63,7 +66,7 @@ def get_parser():
         action='store',
         nargs='?',
         type=str,
-        default='TTJets_LO',
+        default='',
         help="Sample to be post-processed, given as CMG component name"
         )
     
@@ -143,6 +146,11 @@ def get_parser():
         help="Process leptons from LepGood and LepOther, merging them in LepAll."
         )
      
+    argParser.add_argument('--processBTagWeights',
+        action='store_true',
+        help="Calculate BTag Weights for methods 1a and 1b"
+        )
+     
     argParser.add_argument('--storeOnlyLepAll',
         action='store_true',
         help="Store only LepAll, do not store LepGood and LepOther. Effective only if processLepAll = True"
@@ -153,15 +161,28 @@ def get_parser():
         help="Apply event veto list, if applyEventVetoList = True"
         )
 
-    argParser.add_argument('--runSmallSample',
+    argParser.add_argument('--applyEventVetoFastSimJets',
         action='store_true',
-        help="Run the file on a small sample (for test purpose), bool flag set to True if used"
+        help="Apply an event veto for FastJet samples (see 'corridor studies', if applyEventVetoList = True"
+        )
+
+    argParser.add_argument('--runChunks',
+        action='store',
+        nargs=2,
+        type=int,
+        help="Process a given range of chunks (from first argument to the second argument, inclusive)" + \
+             "\n If argument is missing, process all chunks"
         )
     
     argParser.add_argument('--testMethods',
         action='store_true',
         help="Testing only the post-processing methods, without saving ROOT files, on runSmallSample files " + \
             "\n bool flag set to True if used. \n runSmallSample will be set automatically to True"
+        )
+    
+    argParser.add_argument('--runInteractively',
+        action='store_true',
+        help="For Debugging/Developing  purposes"
         )
     # 
     return argParser

@@ -9,6 +9,7 @@ import sys
 import tempfile
 import os
 import shutil
+import glob
 import pprint
 import math
 import time
@@ -113,6 +114,11 @@ def getParameterSet(args):
         'extEl': varListExtEl,
         'extLep': varListExtLep,
         }
+    
+    # use a common list for el and el2
+    if 'el2' in LepGoodSel:
+        LepVarList['el2'] = varListEl
+
 
     params['LepVarList'] = LepVarList
     
@@ -152,6 +158,40 @@ def getParameterSet(args):
         vectors_MC_List.append(GenTracksSel)
 
     params['vectors_MC_List'] = vectors_MC_List
+
+
+    if  args.processBTagWeights:
+
+        params['JetSel']['branches'].append('hadronFlavour/I')
+        from Workspace.DegenerateStopAnalysis.cmgPostProcessing.btagEfficiency import btagEfficiency
+
+        sampleName = args.processSample
+        eff_dict_map = {
+                         "WJets_1j" : ["ZInv", "ZJets", "WJets", "DYJets" ,"ZZ", "WZ", "WW" ] ,
+                         "TTJets_1j" : ["TTJets" , ]
+                        }
+        eff_to_use = "TTJets_1j" #default
+        for eff_samp, sampleList in eff_dict_map.iteritems():
+            if any([ samp in sampleName for samp in sampleList]):
+                eff_to_use = eff_samp
+                break
+
+        print "Decided to use %s for the jet efficiency"%eff_to_use
+ 
+
+        params['beff']={}
+
+        params['beff']['effFile']         = '$CMSSW_BASE/src/Workspace/DegenerateStopAnalysis/data/btagEfficiencyData/%s.pkl'%eff_to_use
+        params['beff']['sfFile']          = '$CMSSW_BASE/src/Workspace/DegenerateStopAnalysis/data/btagEfficiencyData/CSVv2_4invfb_systJuly15.csv'
+        params['beff']['sfFile_FastSim']  = '$CMSSW_BASE/src/Workspace/DegenerateStopAnalysis/data/btagEfficiencyData/CSV_13TEV_Combined_20_11_2015.csv'
+        params['beff']['btagEff']         = btagEfficiency( 
+                                                            fastSim = False,  
+                                                            effFile = params['beff']['effFile'], 
+                                                            sfFile = params['beff']['sfFile'], 
+                                                            sfFile_FastSim =  params['beff']['sfFile_FastSim']  
+                                                           )
+
+
     
     #
     return params
@@ -171,48 +211,7 @@ def get_logger(logLevel, logFile):
     cmgObjectSelection.logger.setLevel(numeric_level)
     cmgObjectSelection.logger.addHandler(fileHandler)
 
-    return logger
-
-def retryRemove(function, path, excinfo):
-    ''' Take a nap and try again.
-    
-    Address AFS/NSF problems with left-over lock files which prevents
-    the 'shutil.rmtree' to delete the directory. The idea is to wait at most 20 sec
-    for the fs to automatically remove these lock files and try again.
-    Inspired from some GANGA code.
-    
-    '''   
-    
-    logger = logging.getLogger('cmgPostProcessing.retryRemove')
-    
-    for delay in 1, 3, 6, 10:
-        
-        if not os.path.exists(path): 
-            break
-        
-        time.sleep(delay) 
-        shutil.rmtree(path, ignore_errors=True)
-        
-    # 
-    if not os.path.exists(path): 
-        logger.debug("\n Path \n    %s \n deleted \n", path)  
-    else:
-        os.system("lsof +D " + path) 
-        
-        # not nice, but try to force - however, even 'rm -rf' can fail for 'Device or resource busy'
-        os.system("rm -rf " + path)
-        logger.debug("\n Try to delete path \n    %s \n by force using 'rm -rf' \n", path)  
-    
-    # last check before giving up  
-    if os.path.exists(path): 
-        exctype, value = excinfo[:2]
-        logger.debug(
-            "\n Unable to remove path \n    %s \n from the system." + \
-            "\n Reason: %s:%s" + \
-            "\n There might be some AFS/NSF lock files left over. \n", 
-            path, exctype, value
-            )
-        
+    return logger        
 
 def getSamples(args):
     '''Return a list of components to be post-processed.
@@ -240,7 +239,6 @@ def getSamples(args):
 
     # cmg samples definition file
     cmgTuplesFullName = 'Workspace.DegenerateStopAnalysis.samples.cmgTuples.' + cmgTuples
-    
     cmssw_base = os.environ['CMSSW_BASE']
     sampleFile = os.path.join(cmssw_base, 'src/Workspace/DegenerateStopAnalysis/python/samples/cmgTuples') + \
         '/' + cmgTuples + '.py'
@@ -274,13 +272,13 @@ def getSamples(args):
     for sampleName in processSampleList:
         foundSample = False
         
-        # cmgSamples.samples contains components or list of components  
+        # cmgSamples.allComponents contains components or list of components  
         try:
             sampleRequested = getattr(cmgSamples, sampleName)
             
             if isinstance(sampleRequested, dict):
                 # single component
-                if (sampleName == sampleRequested['cmgComp'].name):
+                if (sampleName == sampleRequested['cmgName']):
                     allComponentsList.append(sampleRequested)
                     foundSample = True
                     continue      
@@ -300,11 +298,11 @@ def getSamples(args):
                 
                     
         except AttributeError:
-            sampleRequested = cmgSamples.samples + cmgSamples.allSignals
+            sampleRequested = cmgSamples.allComponents + cmgSamples.allSignals
 
             if isinstance(sampleRequested, dict):
                 # single component
-                if (sampleName == sampleRequested['cmgComp'].name):
+                if (sampleName == sampleRequested['cmgName']):
                     allComponentsList.append(sampleRequested)
                     foundSample = True
                     break            
@@ -312,7 +310,7 @@ def getSamples(args):
                 # list of components
                 for comp in sampleRequested:
                     print "\n sampleRequested \n", (pprint.pformat(comp)), "\n"
-                    if (sampleName == comp['cmgComp'].name):
+                    if (sampleName == comp['cmgName']):
                         allComponentsList.append(comp)
                         foundSample = True
                         break 
@@ -325,7 +323,7 @@ def getSamples(args):
         
         if not foundSample:
             print "\n List of available samples in cmgTuples set {0}: \n {1} \n".format(
-                cmgTuples, pprint.pformat(cmgSamples.samples)
+                cmgTuples, pprint.pformat(cmgSamples.allComponents)
                 )
             print "\n List of available signal samples in cmgTuples set {0}: \n {1} \n".format(
                 cmgTuples, pprint.pformat(cmgSamples.allSignals)
@@ -481,7 +479,7 @@ def rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, para
     
     # common branches already defined in cmgTuples
     keepBranches_DATAMC = [
-        'run', 'lumi', 'evt', 'isData', 'rho', 'nVert', 
+        'run', 'lumi', 'evt', 'isData', 'rho', 'nVert', 'rhoCN',
         'met*',
         'Flag_*','HLT_*',
         'nJet', 'Jet_*', 
@@ -524,8 +522,14 @@ def rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, para
     if args.processLepAll:
         newVariables_DATAMC.extend([
             "nLepOther_mu/I/-1", "nLepOther_el/I/-1", "nLepOther_lep/I/-1",
-            "nLepAll_mu/I/-1", "nLepAll_el/I/-1", "nLepAll_lep/I/-1",            
+            "nLepAll_mu/I/-1", "nLepAll_el/I/-1", "nLepAll_lep/I/-1",
             ])
+        
+        if 'el2' in params['LepGoodSel']:
+            newVariables_DATAMC.extend([
+                "nLepAll_el2/I/-1",
+                ])
+            
 
     newVariables_DATAMC.extend([
         'nBasJet/I/-1', 'nVetoJet/I/-1', 'nIsrJet/I/-1', 'nIsrHJet/I/-1',
@@ -543,6 +547,29 @@ def rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, para
         'bJet_muGood_dR_jHdmu1/F/-999.','bJet_elGood_dR_jHdel1/F/-999.', 'bJet_lepGood_dR_jHdlep1/F/-999.',
         ])
 
+
+    #FIXME
+    if args.processBTagWeights:
+        bTagNames           = [ 'BTag'  , 'SBTag', 'HBTag'   ]  ## to be moved into the params
+        bTagWeightNames     = ['MC', 'SF', 'SF_b_Down', 'SF_b_Up', 'SF_l_Down', 'SF_l_Up'] ## from btagEff.btagWeightNames , also to be moved to params
+        maxMultBTagWeight   = 2    # move to params
+        bTagWeightVars      = []
+        for bTagName in bTagNames:
+            for var in bTagWeightNames:
+                #varName = "_%s"%var if var!="MC" else ""
+                varName= "_%s"%var
+                if var!='MC':
+                    bTagWeightVars.append(  "weight1a%s%s/F"%(bTagName, varName) )
+                for nB in range(maxMultBTagWeight+1):
+                    bTagWeightVars.append( "weight%s%s%s/F"%(bTagName, nB, varName) ) 
+                    if nB>0: 
+                        #print "weight%s%sp%s/F"%(bTagName, nB, varName)
+                        bTagWeightVars.append( "weight%s%sp%s/F"%(bTagName, nB, varName) ) 
+        bTagWeightVars.sort()
+        newVariables_DATAMC.extend( bTagWeightVars)
+    
+
+
     if args.processLepAll:
         newVariables_DATAMC.extend([
             'basJet_muAll_invMass_mu1jmindR/F/-999.','basJet_muAll_dR_j1mu1/F/-999.', 'basJet_muAll_invMass_3j/F/-999.',
@@ -550,6 +577,14 @@ def rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, para
             'basJet_lepAll_invMass_lep1jmindR/F/-999.','basJet_lepAll_dR_j1lep1/F/-999.', 'basJet_lepAll_invMass_3j/F/-999.',
             'bJet_muAll_dR_jHdmu1/F/-999.','bJet_elAll_dR_jHdel1/F/-999.', 'bJet_lepAll_dR_jHdlep1/F/-999.',
             ])
+        
+    # flag for vetoing events for FastSim samples, as resulted from 2016 "corridor studies"
+    #  = 0: fails event
+    #  = 1: pass event
+    newVariables_DATAMC.extend([
+        'Flag_veto_event_fastSimJets/I/1',
+        ])
+    
 
     newVectors_DATAMC = []
     
@@ -584,11 +619,11 @@ def rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, para
         
         # add list of variables for leptons in readTree to params
         vars_LepTree = [helpers.getVariableName(var) for var in varsNameTypeTreeLepAll]
-        params['varsTreeLep'] = vars_LepTree
+        params['vars_LepTree'] = vars_LepTree
         
         logger.info(
             "\n Additional entries in the parameter dictionary: variables for LepGood tree \n\n %s \n\n", 
-            pprint.pformat(params['varsTreeLep'])
+            pprint.pformat(params['vars_LepTree'])
             )
     
         # end of kludge
@@ -597,34 +632,33 @@ def rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, para
     # index sorting
     
     # leptons are sorted after pt
-    newVectors_DATAMC.extend([
-        {'prefix':'IndexLepGood', 'nMax': params['LepGoodSel']['nMax'], 
-            'vars':[
+    
+    IndexLepVars = [
                 'mu/I/-1',
                 'el/I/-1',
                 'lep/I/-1',
-                ] 
+                ]
+    if 'el2' in params['LepGoodSel']:
+        IndexLepVars.extend([
+            'el2/I/-1',
+            ])
+
+    newVectors_DATAMC.extend([
+        {'prefix':'IndexLepGood', 'nMax': params['LepGoodSel']['nMax'], 
+            'vars':IndexLepVars
             },
         ])
 
     if args.processLepAll:
         newVectors_DATAMC.extend([
             {'prefix':'IndexLepOther', 'nMax': params['LepOtherSel']['nMax'], 
-                'vars':[
-                    'mu/I/-1',
-                    'el/I/-1',
-                    'lep/I/-1',
-                    ] 
+                'vars':IndexLepVars
                 },
             ])
     
         newVectors_DATAMC.extend([
             {'prefix':'IndexLepAll', 'nMax': params['LepGoodSel']['nMax'] + params['LepOtherSel']['nMax'], 
-                'vars':[
-                    'mu/I/-1',
-                    'el/I/-1',
-                    'lep/I/-1',
-                    ] 
+                'vars':IndexLepVars
                 },
             ])
 
@@ -650,7 +684,7 @@ def rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, para
     
     # common branches already defined in cmgTuples
     keepBranches_MC = [ 
-        'nTrueInt', 'genWeight', 'xsec', 'puWeight', 
+        'nTrueInt', 'genWeight', 'xsec', 'puWeight', 'LHEweight_original',
         'GenSusyMStop', 
         'GenSusyMNeutralino',        
         'ngenLep', 'genLep_*', 
@@ -658,6 +692,7 @@ def rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, para
         'ngenPartAll','genPartAll_*',
         'ngenTau', 'genTau_*', 
         'ngenLepFromTau', 'genLepFromTau_*', 
+        'nGenJet', 'GenJet_*',
         ]
     
     readVariables_MC = []
@@ -867,6 +902,19 @@ def getTreeFromChunk(c, skimCond, iSplit, nSplit):
     return t
 
 
+def getRunLumiEvt(splitTree, saveTree):
+    
+    run = int(splitTree.GetLeaf('run').GetValue())
+    lumi = int(splitTree.GetLeaf('lumi').GetValue())
+    evt = int(splitTree.GetLeaf('evt').GetValue())
+
+    run_lumi_evt = "%s:%s:%s\n" % (run, lumi, evt)
+    
+    saveTree.run_lumi_evt = run_lumi_evt
+    
+    # 
+    return saveTree
+
 
 def processGenSusyParticles(readTree, splitTree, saveTree, params):
 
@@ -1060,28 +1108,55 @@ def processLeptons(readTree, splitTree, saveTree, params, LepSelector):
     saveTree = saveTreeLepObject(saveTree, LepColl, 'el', elList)
     saveTree = saveTreeLepObject(saveTree, LepColl, 'lep', lepList)
 
+    # check if one processses the el2 collection of electrons
+    processEl2 = LepSel.get('el2', False)
+    
+    if processEl2:
+        el2Selector = cmgObjectSelection.objSelectorFunc(LepSel['el2'])
+        el2List = lepObj.getSelectionIndexList(readTree, el2Selector)
+        saveTree = saveTreeLepObject(saveTree, LepColl, 'el2', el2List)
+        
+
     if logger.isEnabledFor(logging.DEBUG):
         printDebug(saveTree, LepColl, 'mu', muList)
         printDebug(saveTree, LepColl, 'el', elList)
         printDebug(saveTree, LepColl, 'lep', lepList)
+
+        if processEl2:
+            printDebug(saveTree, LepColl, 'el2', el2List)
         
     # define the named tuple to return the values
+    
+    rtupleLists = [
+        'lepObj',
+        'muList',
+        'elList',
+        'lepList',
+        ]
+
+    if processEl2:
+        rtupleLists.extend(['el2List'])
+
     rtuple = collections.namedtuple(
-        'rtuple', 
-        [
-            'lepObj',
-            'muList',
-            'elList',
-            'lepList',
-            ]
+        'rtuple', rtupleLists
         )
     
-    processLeptons_rtuple = rtuple(
-        lepObj, 
-        muList, 
-        elList, 
-        lepList
-        )
+    if processEl2:
+        processLeptons_rtuple = rtuple(
+            lepObj, 
+            muList, 
+            elList, 
+            lepList,
+            el2List
+            )
+    else:
+        processLeptons_rtuple = rtuple(
+            lepObj, 
+            muList, 
+            elList, 
+            lepList
+            )
+        
     #    
     return saveTree, processLeptons_rtuple
 
@@ -1169,6 +1244,12 @@ def processLeptonsAll(
     muList = []
     elList = []
     lepList = []        
+
+    # check if one processses the el2 collection of electrons
+    processEl2 = params['LepGoodSel'].get('el2', False)
+    
+    if processEl2:
+        el2List = []
     
     # add LepAll to the saveTree
     for idx, lep in enumerate(lepAllList):
@@ -1176,7 +1257,7 @@ def processLeptonsAll(
         lepIndex = lep['index']
         
         # variables for each lepton
-        for var in params['varsTreeLep']:
+        for var in params['vars_LepTree']:
             # extended (new) variables are read from saveTree, others from readTree
             if var in LepVarList['extLep']:
                 if isLepGood:
@@ -1200,6 +1281,10 @@ def processLeptonsAll(
                 elList.append(idx)
             if lepIndex in processLepGood_rtuple.lepList:
                 lepList.append(idx)
+
+            if processEl2:
+                if lepIndex in processLepGood_rtuple.el2List:
+                    el2List.append(idx)
                 
         else:
             if lepIndex in processLepOther_rtuple.muList:
@@ -1208,6 +1293,10 @@ def processLeptonsAll(
                 elList.append(idx)
             if lepIndex in processLepOther_rtuple.lepList:
                 lepList.append(idx)
+
+            if processEl2:
+                if lepIndex in processLepOther_rtuple.el2List:
+                    el2List.append(idx)
                             
     nLepAll = len(lepAllList)
     saveTree.nLepAll = nLepAll
@@ -1217,7 +1306,7 @@ def processLeptonsAll(
         
         for idx in range(nLepAll):
             printStr += "\n Lepton index {0}: \n".format(idx)
-            for var in params['varsTreeLep']:
+            for var in params['vars_LepTree']:
                 varName = LepColl + '_' + var
                 varValue = getattr(saveTree, varName)[idx]
                 printStr += varName + " = " + str(varValue) + '\n'
@@ -1232,10 +1321,16 @@ def processLeptonsAll(
     saveTree = saveTreeLepObject(saveTree, LepColl, 'el', elList)
     saveTree = saveTreeLepObject(saveTree, LepColl, 'lep', lepList)
 
+    if processEl2:
+        saveTree = saveTreeLepObject(saveTree, LepColl, 'el2', el2List)
+
     if logger.isEnabledFor(logging.DEBUG):
         printDebug(saveTree, LepColl, 'mu', muList, LepVarList)
         printDebug(saveTree, LepColl, 'el', elList, LepVarList)
         printDebug(saveTree, LepColl, 'lep', lepList, LepVarList)
+
+        if processEl2:
+            printDebug(saveTree, LepColl, 'el2', el2List, LepVarList)
         
     # get LepAll as cmgObject, print them in debug mode 
     lepAllObj = cmgObjectSelection.cmgObject(saveTree, splitTree, LepColl)
@@ -1248,22 +1343,37 @@ def processLeptonsAll(
     
 
     # define the named tuple to return the values
+    
+    rtupleLists = [
+        'lepObj',
+        'muList',
+        'elList',
+        'lepList',
+        ]
+
+    if processEl2:
+        rtupleLists.extend(['el2List'])
+
     rtuple = collections.namedtuple(
-        'rtuple',
-        [
-            'lepObj',
-            'muList',
-            'elList',
-            'lepList',
-            ]
+        'rtuple', rtupleLists
         )
     
-    lep_rtuple = rtuple(
-        lepAllObj,
-        muList,
-        elList,
-        lepList
-        )
+    if processEl2:
+        lep_rtuple = rtuple(
+            lepAllObj, 
+            muList, 
+            elList, 
+            lepList,
+            el2List
+            )
+    else:
+        lep_rtuple = rtuple(
+            lepAllObj, 
+            muList, 
+            elList, 
+            lepList
+            )
+
     #    
     return saveTree, lep_rtuple
     
@@ -1412,6 +1522,7 @@ def processJets(args, readTree, splitTree, saveTree, params):
 
     bJetSepPtSoftHard = JetSel['bjetSep']['ptSoftHard'][2]
     bSoftJetList, bHardJetList = jetObj.splitIndexList('pt', bJetSepPtSoftHard, bJetList)
+    softJetList, hardJetList   = jetObj.splitIndexList('pt', bJetSepPtSoftHard, basJetList)
     
     nBJet = len(bJetList)
     saveTree.nBJet = nBJet
@@ -1471,17 +1582,138 @@ def processJets(args, readTree, splitTree, saveTree, params):
             'jetObj',
             'basJetList',
             'bJetDiscSortList',
+            'bJetList',
+            'bSoftJetList',
+            'bHardJetList',
+            'softJetList',
+            'hardJetList',
             ]
         )
     
     processJets_rtuple = rtuple(
         jetObj,
         basJetList,
-        bJetDiscSortList
+        bJetDiscSortList,
+        bJetList,
+        bSoftJetList, 
+        bHardJetList,
+        softJetList,
+        hardJetList,
         )
 
     #    
     return saveTree, processJets_rtuple
+
+
+
+
+def processBTagWeights(
+        args, readTree, splitTree, saveTree,
+        params, processJets_rtuple,
+        ):
+    '''Process BTag Weights using Robert's btagEfficiency class. 
+    
+    TODO describe here the processing.
+    '''
+    #
+    #print "---------------------------------------- PROCESSING BTAG WEIGHTS" 
+    logger = logging.getLogger('cmgPostProcessing.processBTagWeights')
+
+    effFile          =   params['beff']['effFile']
+    #effFile         =   params['beff']['effFile'] 
+    sfFile           =   params['beff']['sfFile']
+    sfFile_FastSim   =   params['beff']['sfFile_FastSim']
+    
+    btagEff          =   params['beff']['btagEff']
+   
+ 
+    
+    jObj         = processJets_rtuple.jetObj
+    jetList      = processJets_rtuple.basJetList
+    bJetList     = processJets_rtuple.bJetList
+    bSoftJetList = processJets_rtuple.bSoftJetList
+    bHardJetList = processJets_rtuple.bHardJetList
+    softJetList  = processJets_rtuple.softJetList
+    hardJetList  = processJets_rtuple.hardJetList
+    
+    nonBJetList     = [x for x in jetList if x not in bJetList]
+    nonBSoftJetList = [x for x in jetList if x not in bSoftJetList]
+    nonBHardJetList = [x for x in jetList if x not in bHardJetList]
+    
+    
+    for i in processJets_rtuple.basJetList:
+        btagEff.addBTagEffToJet(jObj,i)
+    setattr(readTree, "%s_%s" % (jObj.obj, 'beff'),jObj.beff)  ## in order for th getObjDict to work with beff
+    
+    
+    
+    varList = ['pt', 'eta', 'phi', 'mass', 'hadronFlavour', 'beff' ]
+    
+    nonBJetList = [x for x in jetList if x not in bJetList]
+    
+    jets     = jObj.getObjDictList(  varList , jetList )
+    softJets = jObj.getObjDictList(  varList , softJetList ) 
+    hardJets = jObj.getObjDictList(  varList , hardJetList ) 
+    bJets     = jObj.getObjDictList(  varList , bJetList )
+    bSoftJets = jObj.getObjDictList(  varList , bSoftJetList )
+    bHardJets = jObj.getObjDictList(  varList , bHardJetList )
+    nonBJets     = jObj.getObjDictList(  varList , nonBJetList )
+    nonBSoftJets = jObj.getObjDictList(  varList , nonBSoftJetList )
+    nonBHardJets = jObj.getObjDictList(  varList , nonBHardJetList )
+    
+    btag_nonbtag_list_pairs = {
+                            'BTag'  : ( bJetList, nonBJetList ),
+                            'SBTag' : ( bSoftJetList , nonBSoftJetList ),
+                            'HBTag' : ( bHardJetList , nonBHardJetList ),
+                              }
+    btag_nonbtag_pairs = {
+                            'BTag'  : ( bJets, nonBJets , jets),
+                            'SBTag' : ( bSoftJets , nonBSoftJets , softJets),
+                            'HBTag' : ( bHardJets , nonBHardJets , hardJets),
+                         }
+    
+    maxMultBTagWeight = 2
+    #print "---------------------------------------------------------------------------"
+    #print "    ", splitTree.evt
+    #print "---------------------------------------------------------------------------"
+    for bTagName, bJets_nonBJets_jets in btag_nonbtag_pairs.iteritems():
+        bj , nonbj , j = bJets_nonBJets_jets
+        for var in btagEff.btagWeightNames:
+            #varName = "_%s"%var if var!="MC" else ""
+            varName = "_%s"%var
+            #
+            # Method 1a:
+            #
+            if var!= 'MC':
+                setattr(saveTree, "weight1a%s%s"%(bTagName, varName), btagEff.getBTagSF_1a( var, bj, nonbj))
+            #
+            # Method 1b:
+            #
+            multiBTagWeightDict = btagEff.getWeightDict_1b( [  jj['beff'][var] for jj in j  ] , maxMultBTagWeight)
+            #print "-----------"*10
+            #pprint.pprint(multiBTagWeightDict)
+            for nB in range(maxMultBTagWeight+1):
+                #print nB 
+                setattr(saveTree, "weight%s%s%s"%(bTagName, nB, varName), multiBTagWeightDict[nB])
+                if nB>0:
+                    #pprint.pprint( "  %s"%multiBTagWeightDict.values()[:nB]  ) 
+                    #print 1 - sum( multiBTagWeightDict.values()[:nB] )
+                    #print "weight%s%sp%s"%(bTagName, nB, varName) 
+                    setattr(saveTree, "weight%s%sp%s"%(bTagName, nB, varName), 1 - sum( multiBTagWeightDict.values()[:nB] )   )  # more than nB  (i.e. 1p,2p)
+
+
+
+
+    processBTagWeights_rtuple = None #FIXME
+    #
+
+    return saveTree, processBTagWeights_rtuple
+
+
+
+
+
+
 
 
 def processLeptonJets(
@@ -1536,7 +1768,7 @@ def processLeptonJets(
             )
         
         # list of variables needed to compute invariant mass        
-        varList = ['pt', 'eta', 'phi', 'mass', ]
+        varList = ['pt', 'eta', 'phi', 'mass' ]
 
         # invariant mass of the selected leading lepton and the dR-closest jet  
         jlList = jetObj.getObjDictList(varList, [closestJetIndex]) + lepObj.getObjDictList(varList, [objList[0]])
@@ -1843,11 +2075,7 @@ def processEventVetoList(readTree, splitTree, saveTree, veto_event_list):
     
     logger = logging.getLogger('cmgPostProcessing.processEventVetoList')
 
-    run = int(splitTree.GetLeaf('run').GetValue())
-    lumi = int(splitTree.GetLeaf('lumi').GetValue())
-    evt = int(splitTree.GetLeaf('evt').GetValue())
-
-    run_lumi_evt = "%s:%s:%s\n" % (run, lumi, evt) 
+    run_lumi_evt = saveTree.run_lumi_evt 
     
     if run_lumi_evt in veto_event_list:
         saveTree.Flag_Veto_Event_List = 0
@@ -1856,13 +2084,96 @@ def processEventVetoList(readTree, splitTree, saveTree, veto_event_list):
             run_lumi_evt
             )
     else:
-        logger.debug(
+        logger.trace(
             "\n Run:LS:Event %s passed veto list",
             run_lumi_evt
             )
         
     #
     return saveTree    
+
+def processEventVetoFastSimJets(readTree, splitTree, saveTree, params):
+    ''' Flag for vetoing events for FastSim samples, as resulted from 2016 "corridor studies".
+    
+          = 0: fails event
+          = 1: pass event
+
+    '''
+
+    logger = logging.getLogger('cmgPostProcessing.processEventVetoFastSimJets')
+
+    run_lumi_evt = saveTree.run_lumi_evt 
+
+    # get the parameters for this function
+    Veto_fastSimJets = params['Veto_fastSimJets']
+    JetVarList = params['JetVarList']
+
+    # selection of reco jets
+
+    Veto_fastSimJets_recoJet = Veto_fastSimJets['Veto_fastSimJets_recoJet']
+
+    recoObjBranches = Veto_fastSimJets_recoJet['branchPrefix']
+    recoJetObj = cmgObjectSelection.cmgObject(readTree, splitTree, recoObjBranches)
+
+    if logger.isEnabledFor(logging.DEBUG):
+        printStr = "\n List of " + recoObjBranches + " jets before selector: " + \
+            recoJetObj.printObjects(None, JetVarList)
+        logger.debug(printStr)
+
+    recoJetSel = Veto_fastSimJets_recoJet['recoJet']
+    recoJetSelector = cmgObjectSelection.objSelectorFunc(recoJetSel)
+    recoJetList = recoJetObj.getSelectionIndexList(readTree, recoJetSel)
+
+    # selection of generated jets
+
+    Veto_fastSimJets_genJet = Veto_fastSimJets['Veto_fastSimJets_genJet']
+
+    genObjBranches = Veto_fastSimJets_genJet['branchPrefix']
+    genJetObj = cmgObjectSelection.cmgObject(readTree, splitTree, genObjBranches)
+
+    if logger.isEnabledFor(logging.DEBUG):
+        printStr = "\n List of " + genObjBranches + " jets before selector: " + \
+            genJetObj.printObjects(None, JetVarList)
+        logger.debug(printStr)
+
+    genJetSel = Veto_fastSimJets_genJet['genJet']
+    genJetSelector = cmgObjectSelection.objSelectorFunc(genJetSel)
+    genJetList = genJetObj.getSelectionIndexList(readTree, genJetSel)
+
+    # compute the criteria
+
+    criteria_dR = Veto_fastSimJets['criteria']['dR']
+    noMatchedRecoJet = False
+
+    for recoJetIdx, recoJet in enumerate(recoJetList):
+        matchedRecoJet = False
+        for genJetIdx, genJet in enumerate(genJetList):
+            recoJet_genJet_dR = helpers.dR(recoJetList[recoJetIdx], genJetList[genJetIdx], recoJetObj, genJetObj)
+            selector = helpers.evalCutOperator(recoJet_genJet_dR, criteria_dR)
+
+            if selector:
+                matchedRecoJet = True
+                break
+
+        if not matchedRecoJet:
+            noMatchedRecoJet = True
+            break
+
+    if noMatchedRecoJet:
+        saveTree.Flag_veto_event_fastSimJets = 0
+        logger.debug(
+            "\n Run:LS:Event %s failed Veto_fastSimJets",
+            run_lumi_evt
+            )
+    else:
+        saveTree.Flag_veto_event_fastSimJets = 1
+        logger.trace(
+            "\n Run:LS:Event %s passed Veto_fastSimJets",
+            run_lumi_evt
+            )
+
+    #
+    return saveTree
 
 def computeWeight(sample, sumWeight,  splitTree, saveTree, params, xsec=None):
     ''' Compute the weight of each event.
@@ -1876,7 +2187,7 @@ def computeWeight(sample, sumWeight,  splitTree, saveTree, params, xsec=None):
     logger = logging.getLogger('cmgPostProcessing.computeWeight')
         
     # sample type (data or MC, taken from CMG component)
-    isDataSample = sample['cmgComp'].isData
+    isDataSample = sample['isData']
     
     # weight according to required luminosity 
     
@@ -1887,7 +2198,7 @@ def computeWeight(sample, sumWeight,  splitTree, saveTree, params, xsec=None):
         lumiScaleFactor = 1
     else:
         if not xsec:
-            xSection = sample['cmgComp'].xSection
+            xSection = sample['xsec']
         else:
             xSection = xsec
         lumiScaleFactor = xSection * target_lumi / float(sumWeight)
@@ -1902,9 +2213,9 @@ def computeWeight(sample, sumWeight,  splitTree, saveTree, params, xsec=None):
         "\n    sum of event weights: %f" + \
         "\n    luminosity scale factor: %f " + \
         "\n    Event weight: %f \n",
-        ('Data ' + sample['cmgComp'].name if isDataSample else 'MC ' + sample['cmgComp'].name),
+        ('Data ' + sample['cmgName'] if isDataSample else 'MC ' + sample['cmgName']),
         target_lumi, genWeight,
-        ('' if isDataSample else 'cross section: ' + str(sample['cmgComp'].xSection) + ' pb^{-1}'),
+        ('' if isDataSample else 'cross section: ' + str(sample['xsec']) + ' pb^{-1}'),
         sumWeight, lumiScaleFactor, saveTree.weight)
     
         
@@ -1912,7 +2223,7 @@ def computeWeight(sample, sumWeight,  splitTree, saveTree, params, xsec=None):
     return saveTree
 
 
-def haddFiles(sample_name, filesForHadd, temporaryDir, outputWriteDirectory):
+def haddFiles(sample_name, root_output_file_prefix, filesForHadd, temporaryDir, outputWriteDirectory):
     ''' Add the histograms using ROOT hadd script
         
         If
@@ -1938,7 +2249,11 @@ def haddFiles(sample_name, filesForHadd, temporaryDir, outputWriteDirectory):
         size += os.path.getsize(temporaryDir + '/' + f)
         root_files.append(f)
         if size > (maxFileSize * (10 ** 6)) or f == filesForHadd[-1] or len(root_files) > maxNumberFiles:
-            output_file = ''.join([sample_name, '_', str(counter), '.root'])
+            output_file = ''.join([
+                root_output_file_prefix,
+                str(counter),
+                '.root'
+                ])
 
             os.chdir(temporaryDir)
             logger.info(
@@ -1957,9 +2272,9 @@ def haddFiles(sample_name, filesForHadd, temporaryDir, outputWriteDirectory):
             counter += 1
             root_files = []
     
-    # remove the temporary directory  - FIXME uncomment cleaning directory after solving hadd problem 
+    # remove the temporary directory
     os.chdir(outputWriteDirectory)
-#     shutil.rmtree(temporaryDir, onerror=retryRemove)
+    shutil.rmtree(temporaryDir, onerror=helpers.retryRemove)
     if not os.path.exists(temporaryDir): 
         logger.debug("\n Temporary directory \n    %s \n deleted. \n", temporaryDir)
     else:
@@ -2018,13 +2333,12 @@ def cmgPostProcessing(argv=None):
     # job control parameters
     
     verbose = args.verbose
+    overwriteOutputDir = args.overwriteOutputDir
     overwriteOutputFiles = args.overwriteOutputFiles
     
     skimGeneral = args.skimGeneral
     skimLepton = args.skimLepton
     skimPreselect = args.skimPreselect
-    
-    runSmallSample = args.runSmallSample
     
     processLepAll = args.processLepAll
     storeOnlyLepAll = args.storeOnlyLepAll
@@ -2033,15 +2347,8 @@ def cmgPostProcessing(argv=None):
         if storeOnlyLepAll:
             raise Exception("\n storeOnlyLepAll option can only be used with processLepAll\n")
             sys.exit()
-
-    # for ipython, run always on small samples   
-    if sys.argv[0].count('ipython'):
-        runSmallSample = True
     
     testMethods = args.testMethods
-    # for testMethods, run always on small samples 
-    if testMethods:
-        runSmallSample = True
         
     
 #     # load FWLite libraries
@@ -2076,7 +2383,7 @@ def cmgPostProcessing(argv=None):
     logLevel = args.logLevel
     
     # use a unique name for the log file, write file in the dataset directory
-    prefixLogFile = 'cmgPostProcessing_' + '_'.join([sample['cmgComp'].name for sample in allSamples]) + \
+    prefixLogFile = 'cmgPostProcessing_' + '_'.join([sample['cmgName'] for sample in allSamples]) + \
          '_' + logLevel + '_'
     logFile = tempfile.NamedTemporaryFile(suffix='.log', prefix=prefixLogFile, dir=outputDirectory, delete=False) 
 
@@ -2095,7 +2402,7 @@ def cmgPostProcessing(argv=None):
         "\n Samples to be processed: %i \n\n %s \n\n Detailed sample description: \n\n  %s \n" + \
         "\n Results will be written to directory \n %s \n",
         cmgTuples, getSamples_rtuple.sampleFile, len(allSamples), 
-        pprint.pformat([sample['cmgComp'].name for sample in allSamples]),
+        pprint.pformat([sample['cmgName'] for sample in allSamples]),
         pprint.pformat(allSamples),
         outputDirectory
         )
@@ -2128,15 +2435,17 @@ def cmgPostProcessing(argv=None):
     
     for isample, sample in enumerate(allSamples):
         
-        sampleName = sample['cmgComp'].name
+        sample_cmgName = sample['cmgName']
         sample_name = sample['name']
         
-        isDataSample = True if sample['cmgComp'].isData else False
-        sampleType = 'Data' if isDataSample else 'MC'
+        isDataSample = sample.get('isData', False)
+        isFastSimSample = sample.get('isFastSim', False)
+
+        sampleType = 'Data' if isDataSample else ('MC Fast Simulation' if isFastSimSample else 'MC Full Simulation')
                               
         logger.info(
             "\n Running on CMG sample component %s of type %s \n",
-            sampleName, sampleType
+            sample_cmgName, sampleType
             ) 
 
         #   prepare for signal scan
@@ -2165,8 +2474,10 @@ def cmgPostProcessing(argv=None):
         logger.info("\n Final skimming condition: \n  %s \n", skimCond)
 
         # create the output sample directory, if it does not exist. 
-        # If it exists and overwriteOutputFiles is set to True, clean up the directory; if overwriteOutputFiles is 
-        # set to False, skip the post-processing of this component.
+        # If it exists and overwriteOutputDir is set to True, clean up the directory; if overwriteOutputDir is 
+        # set to False: 
+        #   if overwriteOutputFiles is False, skip the post-processing of this component
+        #   if overwriteOutputFiles is True, clean up the corresponding root files only and post-processthis component
         #
         # create also a temporary directory (within the output directory)
         # that will be deleted automatically at the end of the job. If the directory exists,
@@ -2191,25 +2502,40 @@ def cmgPostProcessing(argv=None):
                 outputWriteDirectory
                 )
         else:
-            if overwriteOutputFiles:
-                shutil.rmtree(outputWriteDirectory, onerror=retryRemove)
+            if overwriteOutputDir:
+                shutil.rmtree(outputWriteDirectory, onerror=helpers.retryRemove)
                 os.makedirs(outputWriteDirectory)
                 logger.info(
-                    "\n Requested sample directory \n %s \n exists, and overwriteOutputFiles is set to True." + \
+                    "\n Requested sample directory \n %s \n exists, and overwriteOutputDir is set to True." + \
                     "\n Cleaned up and recreated the directory done. \n", 
                     outputWriteDirectory
                     )
             else:
-                logger.error(
-                    "\n Requested sample directory \n %s \n exists, and overwriteOutputFiles is set to False." + \
-                    "\n Skip post-processing sample %s \n", 
-                    outputWriteDirectory, sample_name
-                    )
-                
-                continue
+                if overwriteOutputFiles:
+                    logger.info(
+                        ''.join([
+                            "\n Requested sample directory \n %s \n exists", 
+                            "\n  overwriteOutputDir is set to False",
+                            "\n  overwriteOutputFiles is set to True", 
+                            "\n ==>  only the corresponding root files for this chunk range are cleaned later\n"
+                            ]),
+                        outputWriteDirectory
+                        )
+                    pass
+                else:
+
+                    logger.info(
+                        ''.join([
+                            "\n Requested sample directory \n %s \n exists", 
+                            "\n  overwriteOutputDir is set to False",
+                            "\n  overwriteOutputFiles is set to False",
+                            "\n if root files for this chunk range exist, skip post-processing sample \n %s \n"
+                            ]),
+                        outputWriteDirectory, sample_name
+                        )
         
         # python 2.7 version - must be removed by hand, preferably in a try: ... finalize:
-        tmpPrefix = ''.join(['tmp_postProcessing_', sampleName, '_'])
+        tmpPrefix = ''.join(['tmp_postProcessing_', sample_cmgName, '_'])
         temporaryDir = tempfile.mkdtemp(prefix=tmpPrefix, dir=outputDirectory) 
         #
         # for 3.X use
@@ -2218,18 +2544,96 @@ def cmgPostProcessing(argv=None):
         logger.info("\n Output sample directory \n  %s \n", outputWriteDirectory) 
         logger.debug("\n Temporary directory \n  %s \n", temporaryDir) 
         
-        chunks, sampleSumWeight = hephyHelpers.getChunks(sample)
+        allChunks, sampleSumWeight = hephyHelpers.getChunks(sample)
+        allChunkIndices = helpers.getChunkIndex(sample, allChunks)
 
         logger.info(
             ''.join([
-                "\n Sample %s of type %s has ",
+                "\n Sample %s of type %s has in total",
                 "\n   number of chunks: %i",
+                "\n   chunk index range: %i - %i \n",
                 "\n   sampleSumWeight: %s \n",
                 ]),
-                sampleName, sampleType, len(chunks), sampleSumWeight
+                sample_cmgName, sampleType, len(allChunks), allChunkIndices[0], allChunkIndices[-1], 
+                sampleSumWeight
             )
-        logger.debug("\n Chunks: \n \n %s \n", pprint.pformat(chunks))
+        logger.debug(
+            "\n List of all chunks for the sample: \n \n %s \n\n All chunk indices: \n %s \n", 
+            pprint.pformat(allChunks), pprint.pformat(allChunkIndices)
+            )
 
+        selectedChunks = []
+        selectedChunkIndices = []
+
+        runChunks = args.runChunks
+
+        if runChunks:
+            chunkRange = [runChunks[0], runChunks[1]]
+            for chunk in allChunks:
+                chunkIndex = helpers.getChunkIndex(sample, [chunk])[0]
+                if (chunkIndex >= chunkRange[0])  and (chunkIndex <= chunkRange[1]):
+                    selectedChunks.extend([chunk])
+                    selectedChunkIndices.append(chunkIndex)
+        else:
+           selectedChunks = allChunks
+           selectedChunkIndices = allChunkIndices
+           chunkRange = [allChunkIndices[0], allChunkIndices[1]]
+        
+        logger.info(
+            ''.join([
+                "\n Chunks selected to run over in this job: ",
+                "\n   chunk index range: %i - %i",
+                "\n   actual number of chunks: %i",
+                "\n"
+                ]),
+                chunkRange[0], chunkRange[-1], len(selectedChunks) 
+            )
+        logger.debug(
+            "\n Chunks selected to run over in this job: \n\n %s \n\n Selected chunk indices: \n %s \n",
+            pprint.pformat(selectedChunks),
+            pprint.pformat(selectedChunkIndices)
+            )
+        
+        # the prefix of the ROOT files with saved tree - a counter (starting from 0) is added
+        # to the prefix in haddFiles 
+        root_output_file_prefix = ''.join([
+                sample_name, '_Chunks_',
+                str(chunkRange[0]), '_', str(chunkRange[-1]), '_',
+                ])
+
+        # cleanup the corresponding root files, if overwriteOutputFiles is set to True
+        # Note: this option cleans up only the root files for the selected chunk range, if they exist, the
+        # directory and the root files for the other chunk ranges are not touched
+           
+        if os.path.exists(outputWriteDirectory):
+            
+            os.chdir(outputWriteDirectory)
+            filelist_root = glob.glob(root_output_file_prefix + "*.root")
+            
+            if overwriteOutputFiles and filelist_root:
+                
+                for f_root in filelist_root:
+                    os.remove(f_root)
+                
+                logger.info(
+                    "\n The following files were removed from directory \n %s: \n\n %s \n",
+                    outputWriteDirectory, pprint.pformat(filelist_root)
+                    )
+            else:
+                if filelist_root:
+                    logger.error(
+                        ''.join([
+                            "\n The following files, corresponding to the same chunk range,", 
+                            " exist in the directory \n %s: \n\n",
+                            "%s \n", 
+                            " and overwriteOutputFiles is set to False.",
+                            "\n Skip post-processing sample %s \n"
+                            ]), 
+                        outputWriteDirectory, pprint.pformat(filelist_root), sample_name
+                        )
+                
+                    continue
+        
         # sum all the weights for samples having extended datasets
         
         sumWeight = 0.
@@ -2248,7 +2652,7 @@ def cmgPostProcessing(argv=None):
                     printString.append(str(weightExt))
                 else:
                     raise Exception("\n Extended dataset {0} requested for sample {1}, but not defined in {2}.".format(
-                        sExt, sampleName, getSamples_rtuple.sampleFile)
+                        sExt, sample_cmgName, getSamples_rtuple.sampleFile)
                         )
                     sys.exit()
 
@@ -2264,7 +2668,7 @@ def cmgPostProcessing(argv=None):
             sumWeight = sampleSumWeight
         
         # stupid kludge to get the list of branches for an objects, to be able to add a merged collection to tree
-        varsNameTypeTreeLep = varsTreeLep(chunks, skimCond)
+        varsNameTypeTreeLep = varsTreeLep(allChunks, skimCond)
           
         # get the tree structure      
         rwTreeClasses_rtuple = rwTreeClasses(sample, isample, args, temporaryDir, varsNameTypeTreeLep, params) 
@@ -2282,19 +2686,13 @@ def cmgPostProcessing(argv=None):
         saveTree = rwTreeClasses_rtuple.saveTree
         #
         
-        
-        if runSmallSample: 
-            chunks=chunks[:1]
-            logger.debug("\n\n Running with runSmallSample option. Run only over chunk \n %s\n", pprint.pformat(chunks)) 
-        
         filesForHadd=[]
 
         nEvents_total = 0
         
-        for chunk in chunks:
-          
+        for chunk in selectedChunks:
+            
             sourceFileSize = os.path.getsize(chunk['file'])
-
 
             maxFileSize = 200 # split into maxFileSize MB
             
@@ -2377,11 +2775,13 @@ def cmgPostProcessing(argv=None):
                     readTree.init()
                     splitTree.GetEntry(iEv)
                     
+                    saveTree = getRunLumiEvt(splitTree, saveTree)
+                    
                     logger.debug(
                         "\n " + \
                         "\n ================================================" + \
-                        "\n * Processing Run:LS:Event %i:%i:%i \n",
-                        splitTree.run, splitTree.lumi, int(splitTree.evt) 
+                        "\n * Processing Run:LS:Event %s \n",
+                        saveTree.run_lumi_evt 
                         )
                     
                     # leptons processing
@@ -2404,7 +2804,17 @@ def cmgPostProcessing(argv=None):
                     saveTree, processJets_rtuple = processJets(
                         args, readTree, splitTree, saveTree, params
                         )
+                    if args.runInteractively:
+                        print splitTree.evt
+                        print "WARNING runInteractively!"
+                        return readTree, splitTree, saveTree , processJets_rtuple  , params
                     
+                    if args.processBTagWeights:
+                        saveTree, processBTagWeights_rtuple = processBTagWeights(
+                            args, readTree, splitTree, saveTree,
+                            params, processJets_rtuple,
+                            )
+                        
                     # selected leptons - jets processing
                     saveTree = processLeptonJets(
                         readTree, splitTree, saveTree,
@@ -2438,6 +2848,10 @@ def cmgPostProcessing(argv=None):
                         saveTree = processEventVetoList(
                             readTree, splitTree, saveTree, event_veto_list
                             )
+
+                    # compute flag for event veto for FastSim jets
+                    if isFastSimSample and args.applyEventVetoFastSimJets:
+                        saveTree = processEventVetoFastSimJets(readTree, splitTree, saveTree, params)
 
                     if not isDataSample:
                         saveTree = processGenSusyParticles(readTree, splitTree, saveTree, params)
@@ -2520,7 +2934,13 @@ def cmgPostProcessing(argv=None):
         
         # add the histograms using ROOT hadd script         
         if not testMethods: 
-            haddFiles(sample_name, filesForHadd, temporaryDir, outputWriteDirectory)
+            haddFiles(
+                sample_name,  
+                root_output_file_prefix,
+                filesForHadd, 
+                temporaryDir, 
+                outputWriteDirectory
+                )
  
         
         end_message =  "\n " + \
@@ -2539,4 +2959,10 @@ def cmgPostProcessing(argv=None):
         print '\n End of cmgPostProcessing script.\n'
  
 if __name__ == "__main__":
-    sys.exit(cmgPostProcessing())
+
+    args = get_parser().parse_args()
+    if args.runInteractively:
+        ret = cmgPostProcessing()
+
+    else:
+        sys.exit(cmgPostProcessing())

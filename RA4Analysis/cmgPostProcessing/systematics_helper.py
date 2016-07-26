@@ -55,36 +55,51 @@ def calc_btag_systematics(t,s,r,mcEffDict,sampleKey,maxConsideredBTagWeight,sepa
   return
 
 def calc_LeptonScale_factors_and_systematics(s,histos_LS):
-  mu_mediumID_histo   =histos_LS['mu_mediumID_histo']
-  mu_looseID_histo    =histos_LS['mu_looseID_histo']
-  mu_miniIso02_histo  =histos_LS['mu_miniIso02_histo']
-  mu_sip3d_histo      =histos_LS['mu_sip3d_histo']
-  ele_cutbased_histo  =histos_LS['ele_cutbased_histo']
-  ele_miniIso01_histo =histos_LS['ele_miniIso01_histo']
+  mu_mediumID_histo   = histos_LS['mu_mediumID_histo']
+  mu_looseID_histo    = histos_LS['mu_looseID_histo']
+  mu_miniIso02_histo  = histos_LS['mu_miniIso02_histo']
+  mu_sip3d_histo      = histos_LS['mu_sip3d_histo']
+  mu_HIP_histo        = histos_LS['mu_HIP_histo']
+  ele_cutbased_histo  = histos_LS['ele_cutbased_histo']
+  ele_miniIso01_histo = histos_LS['ele_miniIso01_histo']
+  ele_gsf_histo       = histos_LS['ele_gsf_histo']
   if s.singleMuonic and s.leptonPt<120:
-    bin_lepton_muSF_mediumID = mu_mediumID_histo.FindBin(s.leptonPt,abs(s.leptonEta))
-    s.lepton_muSF_mediumID =  mu_mediumID_histo.GetBinContent(bin_lepton_muSF_mediumID)
-    s.lepton_muSF_looseID =  mu_looseID_histo.GetBinContent(mu_looseID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
-    s.lepton_muSF_miniIso02 =  mu_miniIso02_histo.GetBinContent(mu_miniIso02_histo.FindBin(s.leptonPt,abs(s.leptonEta)))         
-    s.lepton_muSF_sip3d =  mu_sip3d_histo.GetBinContent(mu_sip3d_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
-    s.lepton_muSF_mediumID_err =  mu_mediumID_histo.GetBinError(mu_mediumID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
-    s.lepton_muSF_looseID_err =  mu_looseID_histo.GetBinError(mu_looseID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
-    s.lepton_muSF_miniIso02_err =  mu_miniIso02_histo.GetBinError(mu_miniIso02_histo.FindBin(s.leptonPt,abs(s.leptonEta)))       
-    s.lepton_muSF_sip3d_err =  mu_sip3d_histo.GetBinError(mu_sip3d_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+    s.lepton_muSF_mediumID      = mu_mediumID_histo.GetBinContent(mu_mediumID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+    s.lepton_muSF_looseID       = mu_looseID_histo.GetBinContent(mu_looseID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+    s.lepton_muSF_miniIso02     = mu_miniIso02_histo.GetBinContent(mu_miniIso02_histo.FindBin(s.leptonPt,abs(s.leptonEta)))         
+    s.lepton_muSF_sip3d         = mu_sip3d_histo.GetBinContent(mu_sip3d_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+    s.lepton_muSF_HIP           = mu_HIP_histo.GetBinContent(mu_HIP_histo.FindBin(s.leptonEta))
+    s.lepton_muSF_mediumID_err  = mu_mediumID_histo.GetBinError(mu_mediumID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+    s.lepton_muSF_looseID_err   = mu_looseID_histo.GetBinError(mu_looseID_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+    s.lepton_muSF_miniIso02_err = mu_miniIso02_histo.GetBinError(mu_miniIso02_histo.FindBin(s.leptonPt,abs(s.leptonEta)))       
+    s.lepton_muSF_sip3d_err     = mu_sip3d_histo.GetBinError(mu_sip3d_histo.FindBin(s.leptonPt,abs(s.leptonEta)))
+    s.lepton_muSF_HIP_err       = mu_HIP_histo.GetBinError(mu_HIP_histo.FindBin(s.leptonEta))
+    s.lepton_muSF_systematic    = 0.03
   if s.singleMuonic and s.leptonPt>=120:
-    bin_lepton_muSF_mediumID = mu_mediumID_histo.FindBin(119,abs(s.leptonEta))
-    s.lepton_muSF_mediumID =  mu_mediumID_histo.GetBinContent(bin_lepton_muSF_mediumID)
-    s.lepton_muSF_looseID =  mu_looseID_histo.GetBinContent(mu_looseID_histo.FindBin(119,abs(s.leptonEta)))
-    s.lepton_muSF_miniIso02 =  mu_miniIso02_histo.GetBinContent(mu_miniIso02_histo.FindBin(119,abs(s.leptonEta)))
-    s.lepton_muSF_sip3d =  mu_sip3d_histo.GetBinContent(mu_sip3d_histo.FindBin(119,abs(s.leptonEta)))
-    s.lepton_muSF_mediumID_err =  mu_mediumID_histo.GetBinError(mu_mediumID_histo.FindBin(119,abs(s.leptonEta)))
-    s.lepton_muSF_looseID_err =  mu_looseID_histo.GetBinError(mu_looseID_histo.FindBin(119,abs(s.leptonEta)))
-    s.lepton_muSF_miniIso02_err =  mu_miniIso02_histo.GetBinError(mu_miniIso02_histo.FindBin(119,abs(s.leptonEta)))
-  if s.singleElectronic:
-    s.lepton_eleSF_cutbasedID = ele_cutbased_histo.GetBinContent(ele_cutbased_histo.FindBin(s.leptonEt,abs(s.leptonEta)))      
-    s.lepton_eleSF_miniIso01 = ele_miniIso01_histo.GetBinContent(ele_miniIso01_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+    s.lepton_muSF_mediumID      = mu_mediumID_histo.GetBinContent(mu_mediumID_histo.FindBin(119,abs(s.leptonEta)))
+    s.lepton_muSF_looseID       = mu_looseID_histo.GetBinContent(mu_looseID_histo.FindBin(119,abs(s.leptonEta)))
+    s.lepton_muSF_miniIso02     = mu_miniIso02_histo.GetBinContent(mu_miniIso02_histo.FindBin(119,abs(s.leptonEta)))
+    s.lepton_muSF_sip3d         = mu_sip3d_histo.GetBinContent(mu_sip3d_histo.FindBin(119,abs(s.leptonEta)))
+    s.lepton_muSF_HIP           = mu_HIP_histo.GetBinContent(mu_HIP_histo.FindBin(s.leptonEta))
+    s.lepton_muSF_mediumID_err  = mu_mediumID_histo.GetBinError(mu_mediumID_histo.FindBin(119,abs(s.leptonEta)))
+    s.lepton_muSF_looseID_err   = mu_looseID_histo.GetBinError(mu_looseID_histo.FindBin(119,abs(s.leptonEta)))
+    s.lepton_muSF_miniIso02_err = mu_miniIso02_histo.GetBinError(mu_miniIso02_histo.FindBin(119,abs(s.leptonEta)))
+    s.lepton_muSF_HIP_err       = mu_HIP_histo.GetBinError(mu_HIP_histo.FindBin(s.leptonEta))
+    s.lepton_muSF_systematic    = 0.03
+  if s.singleElectronic and s.leptonEt<200:
+    s.lepton_eleSF_cutbasedID     = ele_cutbased_histo.GetBinContent(ele_cutbased_histo.FindBin(s.leptonEt,abs(s.leptonEta)))      
+    s.lepton_eleSF_miniIso01      = ele_miniIso01_histo.GetBinContent(ele_miniIso01_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+    s.lepton_eleSF_gsf            = ele_gsf_histo.GetBinContent(ele_gsf_histo.FindBin(s.leptonEta,100)) ##pt independent
     s.lepton_eleSF_cutbasedID_err = ele_cutbased_histo.GetBinError(ele_cutbased_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
-    s.lepton_eleSF_miniIso01_err = ele_miniIso01_histo.GetBinError(ele_miniIso01_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+    s.lepton_eleSF_miniIso01_err  = ele_miniIso01_histo.GetBinError(ele_miniIso01_histo.FindBin(s.leptonEt,abs(s.leptonEta)))
+    s.lepton_eleSF_gsf_err        = ele_gsf_histo.GetBinError(ele_gsf_histo.FindBin(s.leptonEta,100)) ##pt independent
+  if s.singleElectronic and s.leptonEt>=200:
+    s.lepton_eleSF_cutbasedID     = ele_cutbased_histo.GetBinContent(ele_cutbased_histo.FindBin(199,abs(s.leptonEta)))
+    s.lepton_eleSF_miniIso01      = ele_miniIso01_histo.GetBinContent(ele_miniIso01_histo.FindBin(199,abs(s.leptonEta)))
+    s.lepton_eleSF_gsf            = ele_gsf_histo.GetBinContent(ele_gsf_histo.FindBin(s.leptonEta,100)) ##pt independent
+    s.lepton_eleSF_cutbasedID_err = ele_cutbased_histo.GetBinError(ele_cutbased_histo.FindBin(199,abs(s.leptonEta)))
+    s.lepton_eleSF_miniIso01_err  = ele_miniIso01_histo.GetBinError(ele_miniIso01_histo.FindBin(199,abs(s.leptonEta)))
+    s.lepton_eleSF_gsf_err        = ele_gsf_histo.GetBinError(ele_gsf_histo.FindBin(s.leptonEta,100)) ##pt independent
   return
 
 
@@ -341,6 +356,44 @@ def getISRWeight(s,genParts):
 
   return
 
+
+def getISRWeight_new(s,isrJets):
+  weight_dict = {
+                0:{"weight":1    ,"sys":1,"stat":1},\
+                1:{"weight":0.882,"sys":0.059,"stat":0.014},\
+                2:{"weight":0.792,"sys":0.104,"stat":0.020},\
+                3:{"weight":0.702,"sys":0.149,"stat":0.031},\
+                4:{"weight":0.648,"sys":0.176,"stat":0.051},\
+                5:{"weight":0.601,"sys":0.199,"stat":0.088},\
+                6:{"weight":0.515,"sys":0.242,"stat":0.133}
+                }
+  s.nISRJets_new = len(isrJets)
+  if s.nISRJets_new < 6:
+      s.weight_ISR_new = weight_dict[s.nISRJets_new]["weight"]
+      s.ISRSigUp_stat_new = 1+weight_dict[s.nISRJets_new]["stat"]
+      s.ISRSigDown_stat_new = 1-weight_dict[s.nISRJets_new]["stat"] 
+      s.ISRSigUp_sys_new = 1+weight_dict[s.nISRJets_new]["sys"]
+      s.ISRSigDown_sys_new = 1-weight_dict[s.nISRJets_new]["sys"]
+  if s.nISRJets_new >= 6: 
+      s.weight_ISR_new      = weight_dict[6]["weight"]
+      s.ISRSigUp_stat_new   = 1+weight_dict[6]["stat"]
+      s.ISRSigDown_stat_new = 1-weight_dict[6]["stat"] 
+      s.ISRSigUp_sys_new    = 1+weight_dict[6]["sys"]
+      s.ISRSigDown_sys_new  = 1-weight_dict[6]["sys"]
+      
+  return
+
+def filter_crazy_jets(jets,genParts):
+    ismatched = True
+    for jet in jets:
+      ismatched = True
+      if not (abs(jet["eta"])<2.5 and jet["pt"]>20): continue
+      for genPart in genParts:
+        if not ismatched :  break
+        dR = deltaR(jet,genPart)
+        if dR >= 0.3 and jet["chHEF"]<0.1:
+          ismatched = False
+    return ismatched
 
 
 def getGenWandLepton(c):
